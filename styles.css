@@ -391,6 +391,19 @@ td .website { color: var(--accent); font-weight: 600; }
 .gate-row { display: flex; gap: 8px; }
 .gate-row input { flex: 1; }
 .gate-error { color: var(--red); font-size: 0.85rem; }
+.gate-hint { color: var(--text-dim); font-size: 0.78rem; }
+.auth-tabs { display: flex; gap: 6px; }
+.auth-tab {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 9px 10px;
+  font-size: 0.88rem;
+}
+.auth-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(245,158,11,.1); font-weight: 700; }
 
 /* User-Chip & persönliche Elemente */
 .topbar-flex { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }

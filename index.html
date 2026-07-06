@@ -22,14 +22,24 @@
     </div>
   </div>
 
-  <!-- Username-Dialog -->
+  <!-- Account-Dialog (Anmelden / Registrieren) -->
   <div class="gate" id="user-gate" hidden>
     <div class="gate-box">
-      <h2>👤 Wer bist du?</h2>
-      <p>Wähle deinen Namen. Damit bekommst du deinen persönlichen Bereich (Likes, gespeicherte Einträge, Notizen, Ordner):</p>
+      <h2>👤 Dein Account</h2>
+      <div class="auth-tabs">
+        <button type="button" id="tab-login" class="auth-tab active">Anmelden</button>
+        <button type="button" id="tab-register" class="auth-tab">Neuen Account erstellen</button>
+      </div>
+      <p id="auth-hint">Melde dich mit deinem Namen und deinem Passwort an:</p>
       <input type="text" id="user-name" placeholder="Dein Name / Username" maxlength="30" autocomplete="off" />
-      <button type="button" id="user-go" class="btn-primary">Los geht's</button>
+      <div class="gate-row">
+        <input type="password" id="user-pw" placeholder="Dein Passwort" autocomplete="off" />
+        <button type="button" id="user-eye" class="btn-secondary" title="Passwort anzeigen">👁</button>
+      </div>
+      <input type="password" id="user-pw2" placeholder="Passwort wiederholen" autocomplete="off" hidden />
+      <button type="button" id="user-go" class="btn-primary">Anmelden</button>
       <p class="gate-error" id="user-error" hidden></p>
+      <p class="gate-hint">Keine E-Mail nötig – nur Name und Passwort.</p>
     </div>
   </div>
 

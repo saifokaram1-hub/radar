@@ -66,22 +66,66 @@ async function initUserGate() {
   const gate = $("#user-gate");
   gate.hidden = false;
   const input = $("#user-name");
+  const pwInput = $("#user-pw");
+  const pw2Input = $("#user-pw2");
+  let modus = "login"; // "login" | "register"
+
+  const setModus = (m) => {
+    modus = m;
+    $("#tab-login").classList.toggle("active", m === "login");
+    $("#tab-register").classList.toggle("active", m === "register");
+    pw2Input.hidden = m === "login";
+    $("#auth-hint").textContent = m === "login"
+      ? "Melde dich mit deinem Namen und deinem Passwort an:"
+      : "Wähle einen Namen und ein eigenes Passwort (keine E-Mail nötig):";
+    $("#user-go").textContent = m === "login" ? "Anmelden" : "Account erstellen";
+    $("#user-error").hidden = true;
+  };
+  $("#tab-login").addEventListener("click", () => setModus("login"));
+  $("#tab-register").addEventListener("click", () => setModus("register"));
+  $("#user-eye").addEventListener("click", () => {
+    const t = pwInput.type === "password" ? "text" : "password";
+    pwInput.type = t;
+    pw2Input.type = t;
+  });
+
+  const userHash = (name, pw) => sha256(name.toLowerCase() + ":" + pw);
+
   const go = async () => {
     const name = input.value.trim();
-    if (name.length < 2) { showUserError("Bitte mindestens 2 Zeichen."); return; }
+    const pw = pwInput.value;
+    if (name.length < 2) { showUserError("Name: bitte mindestens 2 Zeichen."); return; }
+    if (pw.length < 4) { showUserError("Passwort: bitte mindestens 4 Zeichen."); return; }
     try {
-      const res = await fetch(`${NUTZER_API}?username=eq.${encodeURIComponent(name)}&select=id,username`, { headers: HEADERS });
+      const res = await fetch(`${NUTZER_API}?username=eq.${encodeURIComponent(name)}&select=id,username,passwort_hash`, { headers: HEADERS });
       const rows = await res.json();
-      if (rows.length) {
-        meinUser = rows[0];
-      } else {
+      const hash = await userHash(name, pw);
+
+      if (modus === "register") {
+        if (rows.length) { showUserError("Dieser Name ist schon vergeben – bitte anmelden oder anderen Namen wählen."); return; }
+        if (pw !== pw2Input.value) { showUserError("Die Passwörter stimmen nicht überein."); return; }
         const ins = await fetch(NUTZER_API, {
           method: "POST",
           headers: { ...HEADERS, Prefer: "return=representation" },
-          body: JSON.stringify({ username: name }),
+          body: JSON.stringify({ username: name, passwort_hash: hash }),
         });
         if (!ins.ok) throw new Error("HTTP " + ins.status);
-        meinUser = (await ins.json())[0];
+        meinUser = { id: (await ins.json())[0].id, username: name };
+      } else {
+        if (!rows.length) { showUserError("Diesen Namen gibt es noch nicht – bitte zuerst einen Account erstellen."); return; }
+        const u = rows[0];
+        if (u.passwort_hash == null) {
+          // Alt-Account ohne Passwort: beim ersten Login das eingegebene Passwort setzen
+          await fetch(`${NUTZER_API}?id=eq.${u.id}`, {
+            method: "PATCH",
+            headers: { ...HEADERS, Prefer: "return=minimal" },
+            body: JSON.stringify({ passwort_hash: hash }),
+          });
+        } else if (u.passwort_hash !== hash) {
+          showUserError("Falsches Passwort.");
+          return;
+        }
+        meinUser = { id: u.id, username: u.username };
       }
       localStorage.setItem("radar_user", JSON.stringify(meinUser));
       gate.hidden = true;
@@ -91,7 +135,7 @@ async function initUserGate() {
     }
   };
   $("#user-go").addEventListener("click", go);
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+  [input, pwInput, pw2Input].forEach((el) => el.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); }));
   input.focus();
 }
 
