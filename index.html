@@ -8,10 +8,58 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Passwort-Tor -->
+  <div class="gate" id="gate" hidden>
+    <div class="gate-box">
+      <h2>🔒 Zugang</h2>
+      <p>Diese Plattform ist privat. Bitte Zugangs-Passwort eingeben:</p>
+      <div class="gate-row">
+        <input type="password" id="gate-pw" placeholder="Passwort" autocomplete="off" />
+        <button type="button" id="gate-eye" class="btn-secondary" title="Passwort anzeigen">👁</button>
+      </div>
+      <button type="button" id="gate-go" class="btn-primary">Freischalten</button>
+      <p class="gate-error" id="gate-error" hidden>Falsches Passwort.</p>
+    </div>
+  </div>
+
+  <!-- Username-Dialog -->
+  <div class="gate" id="user-gate" hidden>
+    <div class="gate-box">
+      <h2>👤 Wer bist du?</h2>
+      <p>Wähle deinen Namen. Damit bekommst du deinen persönlichen Bereich (Likes, gespeicherte Einträge, Notizen, Ordner):</p>
+      <input type="text" id="user-name" placeholder="Dein Name / Username" maxlength="30" autocomplete="off" />
+      <button type="button" id="user-go" class="btn-primary">Los geht's</button>
+      <p class="gate-error" id="user-error" hidden></p>
+    </div>
+  </div>
+
+  <!-- Mein-Bereich-Panel -->
+  <div class="drawer-backdrop" id="mb-backdrop" hidden></div>
+  <aside class="drawer" id="mb-panel" hidden>
+    <div class="drawer-head">
+      <h2 id="mb-title">👤 Mein Bereich</h2>
+      <button id="mb-close" class="btn-icon" type="button" aria-label="Schließen">✕</button>
+    </div>
+    <div class="mb-tabs" id="mb-tabs">
+      <button data-tab="liked" class="mb-tab active" type="button">❤ Geliked</button>
+      <button data-tab="gespeichert" class="mb-tab" type="button">🔖 Gespeichert</button>
+      <button data-tab="notizen" class="mb-tab" type="button">📝 Notizen</button>
+      <button data-tab="ordner" class="mb-tab" type="button">📁 Ordner</button>
+    </div>
+    <div class="drawer-body" id="mb-body"></div>
+  </aside>
+
   <header class="topbar">
-    <div class="topbar-inner">
-      <h1>🎰 Crypto Gambling Radar</h1>
-      <p class="subtitle">Bitcointalk Gambling-Board · alle Threads kategorisiert &amp; recherchierbar</p>
+    <div class="topbar-inner topbar-flex">
+      <div>
+        <h1>🎰 Crypto Gambling Radar</h1>
+        <p class="subtitle">Bitcointalk Gambling-Board · alle Threads kategorisiert &amp; recherchierbar</p>
+      </div>
+      <div class="user-chip" id="user-chip" hidden>
+        <span id="user-chip-name"></span>
+        <button type="button" id="mb-open" class="btn-secondary">Mein Bereich</button>
+        <button type="button" id="user-switch" class="btn-icon" title="Nutzer wechseln">⇄</button>
+      </div>
     </div>
   </header>
 
@@ -70,6 +118,9 @@
         <label>Recherche
           <select data-col="recherche_status"><option value="">Alle</option><option>Offen</option><option>In Arbeit</option><option>Fertig</option></select>
         </label>
+        <label>Meine Auswahl
+          <select id="f-meine"><option value="">Alle</option><option value="liked">❤ Geliked</option><option value="gespeichert">🔖 Gespeichert</option><option value="notiz">📝 Mit Notiz</option></select>
+        </label>
         <label>Bekanntheit
           <select id="f-score"><option value="">Alle</option><option value="hoch">Hoch (≥80)</option><option value="mittel">Mittel (50–79)</option><option value="niedrig">Niedrig (&lt;50)</option></select>
         </label>
@@ -109,6 +160,7 @@
         <table id="table">
           <thead>
             <tr>
+              <th>Meine</th>
               <th>Titel</th>
               <th>Website</th>
               <th>Bekanntheit</th>
@@ -151,5 +203,6 @@
   </footer>
 
   <script src="app.js"></script>
+  <script src="personal.js"></script>
 </body>
 </html>

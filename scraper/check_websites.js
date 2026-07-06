@@ -17,7 +17,7 @@ if (!fs.existsSync(STATE_DIR)) fs.mkdirSync(STATE_DIR);
 async function fetchRows() {
   const rows = [];
   for (let off = 0; ; off += 1000) {
-    const res = await fetch(`${SUPA}?select=topic_id,website,verfuegbar_at,verfuegbar_de,website_status&website=not.is.null&order=topic_id.asc&limit=1000&offset=${off}`, { headers: { apikey: KEY } });
+    const res = await fetch(`${SUPA}?select=topic_id,title,thread_url,website,verfuegbar_at,verfuegbar_de,website_status&website=not.is.null&order=topic_id.asc&limit=1000&offset=${off}`, { headers: { apikey: KEY } });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const b = await res.json();
     rows.push(...b);
@@ -75,7 +75,7 @@ async function probe(domain) {
   const updates = rows.map((r) => {
     const status = done.get(r.website);
     if (!status) return null;
-    const u = { topic_id: r.topic_id, website_status: status };
+    const u = { topic_id: r.topic_id, title: r.title, thread_url: r.thread_url, website_status: status };
     u.verfuegbar_at = r.verfuegbar_at === 'Unbekannt' || r.verfuegbar_at == null ? (status === 'Online' ? 'Ja' : 'Nein') : r.verfuegbar_at;
     u.verfuegbar_de = (r.verfuegbar_de === 'Unbekannt' || r.verfuegbar_de == null) && status === 'Offline' ? 'Nein' : (r.verfuegbar_de ?? 'Unbekannt');
     return u;

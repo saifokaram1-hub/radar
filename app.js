@@ -19,6 +19,7 @@ const state = {
   trackerStep: "",   // Account-Tracker-Filter: Schritt-Schlüssel
   revMin: "",        // Revshare-%-Filter ab
   revMax: "",        // Revshare-%-Filter bis
+  meineAuswahl: "",  // persönlicher Filter: liked/gespeichert/notiz/ordner:<id>
 };
 let currentRecord = null;
 
@@ -44,6 +45,12 @@ function buildFilterParams() {
   if (state.trackerStep) p.append(`tracker->>${state.trackerStep}`, "eq.true");
   if (state.revMin !== null && state.revMin !== "") p.append("revshare_wert", `gte.${state.revMin}`);
   if (state.revMax !== null && state.revMax !== "") p.append("revshare_wert", `lte.${state.revMax}`);
+
+  // Persönlicher Filter (Geliked/Gespeichert/Notiz/Ordner) – IDs kommen aus personal.js
+  if (state.meineAuswahl && typeof window.meineAuswahlIds === "function") {
+    const ids = window.meineAuswahlIds(state.meineAuswahl);
+    p.append("id", ids.length ? `in.(${ids.join(",")})` : "eq.00000000-0000-0000-0000-000000000000");
+  }
 
   const groups = [...state.wunschGroups];
   const q = state.search.trim().replace(/[,()*]/g, " ").trim();
@@ -123,12 +130,13 @@ function statusBadge(v) {
 function renderRows(rows) {
   const tbody = $("#tbody");
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-dim);padding:30px">Keine Treffer.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-dim);padding:30px">Keine Treffer.</td></tr>';
     return;
   }
   tbody.innerHTML = rows
     .map(
       (r) => `<tr data-id="${r.id}">
+        <td class="my-cell" onclick="event.stopPropagation()">${typeof window.myCellHtml === "function" ? window.myCellHtml(r.id) : ""}</td>
         <td class="title-cell" title="${esc(r.title)}">${esc(r.title)}</td>
         <td>${r.website ? `<span class="website">${esc(r.website)}</span>` : '<span style="color:var(--text-dim)">–</span>'}</td>
         <td>${scoreBadge(r.bekanntheits_score)}</td>
@@ -379,7 +387,9 @@ function openDrawer(record) {
       </div>
     </div>`;
 
-  $("#drawer-body").innerHTML = info + sections + eigHtml + ketteHtml;
+  const persHtml = typeof window.personalSectionHtml === "function" ? window.personalSectionHtml(record) : "";
+  $("#drawer-body").innerHTML = persHtml + info + sections + eigHtml + ketteHtml;
+  if (typeof window.wirePersonalSection === "function") window.wirePersonalSection(record);
 
   $("#eig-add").addEventListener("click", () => {
     $("#eig-list").insertAdjacentHTML("beforeend", eigRowHtml("", ""));
@@ -768,6 +778,12 @@ $("#f-tracker").addEventListener("change", (e) => {
   loadPage();
 });
 
+$("#f-meine").addEventListener("change", (e) => {
+  state.meineAuswahl = e.target.value;
+  state.page = 0;
+  loadPage();
+});
+
 let revTimer;
 ["f-rev-min", "f-rev-max"].forEach((id) => {
   document.getElementById(id).addEventListener("input", (e) => {
@@ -789,12 +805,14 @@ $("#reset").addEventListener("click", () => {
   state.wunschGroups = [];
   state.revMin = "";
   state.revMax = "";
+  state.meineAuswahl = "";
   resetAdvFilters();
   $("#search").value = "";
   $("#wunsch").value = "";
   $("#f-score").value = "";
   $("#f-rev-min").value = "";
   $("#f-rev-max").value = "";
+  $("#f-meine").value = "";
   renderChips([]);
   document.querySelectorAll("#filters select[data-col]").forEach((s) => (s.value = ""));
   $("#sort").value = "bekanntheits_score.desc.nullslast";

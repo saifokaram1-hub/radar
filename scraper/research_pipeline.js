@@ -143,14 +143,23 @@ function extract(opText, row) {
   const cpaM = lower.match(/\bcpa\b[^.\n]{0,60}?\$\s?([\d,]{2,6})/) || lower.match(/\$\s?([\d,]{2,6})[^.\n]{0,30}\bcpa\b/);
   if (/\bcpa\b/i.test(lower)) { out.cpa = 'Ja'; out.affiliate = 'Ja'; }
   if (cpaM) out.cpa_hoehe = `$${cpaM[1]} (laut Thread)`;
-  const rsM = lower.match(/(?:up to\s*)?(\d{1,2}(?:[.,]\d)?)\s*%[^.\n]{0,40}(?:rev(?:enue)?[\s-]?share|commission|revenue)/) || lower.match(/(?:rev(?:enue)?[\s-]?share|commission)[^%\n]{0,40}?(\d{1,2}(?:[.,]\d)?)\s*%/);
-  if (rsM) {
-    const val = parseFloat(rsM[1].replace(',', '.'));
-    if (val >= 1 && val <= 90) {
-      out.revshare_prozent = `${rsM[1]}% (laut Thread)`;
-      out.revshare_wert = val;
-      out.affiliate = 'Ja';
+  // Revshare nur mit eindeutigem Affiliate-Kontext im selben Satz
+  // (verhindert Fehlgriffe: "2% commission" = Hausgebühr in alten Spiel-Threads)
+  let rsBest = null, rsRaw = null;
+  for (const s of sents) {
+    const sl = s.toLowerCase();
+    const affKontext = /rev[\s-]?share|revenue share/.test(sl) ||
+      (/commission/.test(sl) && /affiliat|referr|partner/.test(sl));
+    if (!affKontext) continue;
+    for (const m of sl.matchAll(/(\d{1,2}(?:[.,]\d)?)\s*%/g)) {
+      const val = parseFloat(m[1].replace(',', '.'));
+      if (val >= 1 && val <= 90 && (rsBest === null || val > rsBest)) { rsBest = val; rsRaw = m[1]; }
     }
+  }
+  if (rsBest !== null) {
+    out.revshare_prozent = `${rsRaw}% (laut Thread)`;
+    out.revshare_wert = rsBest;
+    out.affiliate = 'Ja';
   }
 
   // Affiliate-Kontakt
