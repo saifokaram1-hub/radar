@@ -17,6 +17,8 @@ const state = {
   wunschGroups: [],  // von der Wunsch-Suche: PostgREST or(...)-Gruppen
   advanced: {},      // erweiterte Filter: { spalte: { text, status } }
   trackerStep: "",   // Account-Tracker-Filter: Schritt-Schlüssel
+  revMin: "",        // Revshare-%-Filter ab
+  revMax: "",        // Revshare-%-Filter bis
 };
 let currentRecord = null;
 
@@ -37,8 +39,11 @@ function buildFilterParams() {
     if (t) p.append(col, `ilike.*${t}*`);
     if (f.status === "ausgefuellt") p.append(col, "not.is.null");
     if (f.status === "leer") p.append(col, "is.null");
+    if (f.status === "nichtvorhanden") p.append(col, "eq.Nicht vorhanden");
   }
   if (state.trackerStep) p.append(`tracker->>${state.trackerStep}`, "eq.true");
+  if (state.revMin !== null && state.revMin !== "") p.append("revshare_wert", `gte.${state.revMin}`);
+  if (state.revMax !== null && state.revMax !== "") p.append("revshare_wert", `lte.${state.revMax}`);
 
   const groups = [...state.wunschGroups];
   const q = state.search.trim().replace(/[,()*]/g, " ").trim();
@@ -154,11 +159,13 @@ function renderMeta() {
 }
 
 /* ---------- Detail-Drawer ---------- */
-const SELECT_JNU = ["Ja", "Nein", "Unbekannt"];
+const SELECT_JNU = ["Ja", "Nein", "Unbekannt", "Nicht vorhanden"];
 const SECTIONS = [
   { title: "Allgemein", fields: [
     { col: "website", label: "Website", type: "text" },
+    { col: "website_status", label: "Website-Status", type: "select", options: ["", "Online", "Offline"] },
     { col: "spieler_zahlen", label: "Spieler-Zahlen", type: "text" },
+    { col: "lizenz", label: "Lizenz / Standort", type: "text" },
   ]},
   { title: "Verfügbarkeit", fields: [
     { col: "verfuegbar_at", label: "Verfügbar in Österreich", type: "select", options: SELECT_JNU },
@@ -169,7 +176,7 @@ const SECTIONS = [
     { col: "kette_firma", label: "Firma / Muttergesellschaft", type: "text" },
   ]},
   { title: "KYC & Zahlungen", fields: [
-    { col: "kyc", label: "KYC-Status", type: "select", options: ["KYC", "Non-KYC", "Unbekannt"] },
+    { col: "kyc", label: "KYC-Status", type: "select", options: ["KYC", "Non-KYC", "Unbekannt", "Nicht vorhanden"] },
     { col: "kyc_details", label: "Was für KYC?", type: "textarea", full: true },
     { col: "zahlungsmoeglichkeiten", label: "Einzahlungen (Crypto)", type: "text", full: true },
     { col: "allgemeines_angebot", label: "Allgemeines Angebot", type: "textarea", full: true },
@@ -228,6 +235,7 @@ const ADV_FIELDS = [
   ["affiliate_kontakt", "Affiliate-Kontakt"],
   ["notizen", "Notizen"],
   ["eigenschaften_text", "Eigene Eigenschaften"],
+  ["lizenz", "Lizenz / Standort"],
 ];
 
 function renderAdvFilters() {
@@ -236,7 +244,7 @@ function renderAdvFilters() {
     <div class="adv-field">
       <label>${esc(label)} enthält …<input type="text" data-adv-text="${col}" autocomplete="off" /></label>
       <label>Status<select data-adv-status="${col}">
-        <option value="">Egal</option><option value="ausgefuellt">Ausgefüllt</option><option value="leer">Leer</option>
+        <option value="">Egal</option><option value="ausgefuellt">Ausgefüllt</option><option value="leer">Leer</option><option value="nichtvorhanden">Nicht vorhanden</option>
       </select></label>
     </div>`).join("");
 
@@ -504,6 +512,15 @@ function parseWunsch(raw) {
     out.chips.push("Schnelle Auszahlung");
   }
 
+  // Revshare-Prozent-Bereiche ("revshare ab 25%", "unter 40%")
+  let revPhrase = false;
+  if (/rev[\s-]?share|revenue|provision|kommission/.test(text)) {
+    const ab = text.match(/(?:ab|über|ueber|mindestens|mind|minimum|mehr als)\s*(\d{1,2}(?:[.,]\d)?)\s*%?/);
+    const bis = text.match(/(?:unter|maximal|max|höchstens|hoechstens|weniger als)\s*(\d{1,2}(?:[.,]\d)?)\s*%?/);
+    if (ab) { out.extra.push(["revshare_wert", `gte.${ab[1].replace(",", ".")}`]); out.chips.push(`Revshare ≥ ${ab[1]}%`); revPhrase = true; }
+    if (bis) { out.extra.push(["revshare_wert", `lte.${bis[1].replace(",", ".")}`]); out.chips.push(`Revshare ≤ ${bis[1]}%`); revPhrase = true; }
+  }
+
   tokens.forEach((tok, i) => {
     if (used.has(i)) return;
     const neg = negatedAt(i);
@@ -537,7 +554,26 @@ function parseWunsch(raw) {
       out.filters.affiliate = jn(neg); out.chips.push(`Affiliate: ${jn(neg)}`); return mark();
     }
     if (tok === "cpa") { out.filters.cpa = jn(neg); out.chips.push(`CPA: ${jn(neg)}`); return mark(); }
-    if (tok.startsWith("revshare")) { out.extra.push(["revshare_prozent", "not.is.null"]); out.chips.push("Revshare-Angabe vorhanden"); return mark(); }
+    if (tok.startsWith("revshare")) {
+      if (!revPhrase) { out.extra.push(["revshare_wert", "not.is.null"]); out.chips.push("Revshare-Angabe vorhanden"); }
+      return mark();
+    }
+
+    // Lizenz / Standort
+    if (tok.startsWith("curacao") || tok.startsWith("curaçao")) { out.extra.push(["lizenz", "ilike.*cura*"]); out.chips.push("Lizenz: Curaçao"); return mark(); }
+    if (tok.startsWith("malta")) { out.extra.push(["lizenz", "ilike.*malta*"]); out.chips.push("Lizenz: Malta"); return mark(); }
+    if (tok.startsWith("anjouan")) { out.extra.push(["lizenz", "ilike.*anjouan*"]); out.chips.push("Lizenz: Anjouan"); return mark(); }
+    if (tok.startsWith("lizenz") || tok.startsWith("lizensiert") || tok.startsWith("licensed")) {
+      if (!out.extra.some(([c]) => c === "lizenz")) {
+        out.extra.push(["lizenz", neg ? "is.null" : "not.is.null"]);
+        out.chips.push(neg ? "Ohne Lizenz-Angabe" : "Lizenz-Angabe vorhanden");
+      }
+      return mark();
+    }
+
+    // Website-Status
+    if (tok === "online" || tok.startsWith("erreichbar")) { out.filters.website_status = "Online"; out.chips.push("Website: Online"); return mark(); }
+    if (tok === "offline" || tok === "tot" || tok === "tote" || tok === "dead") { out.filters.website_status = "Offline"; out.chips.push("Website: Offline"); return mark(); }
 
     // Recherche-Status
     if (tok.startsWith("recherchiert") || (tok === "fertig" && tokens[i + 1]?.startsWith("recherchiert"))) {
@@ -732,6 +768,18 @@ $("#f-tracker").addEventListener("change", (e) => {
   loadPage();
 });
 
+let revTimer;
+["f-rev-min", "f-rev-max"].forEach((id) => {
+  document.getElementById(id).addEventListener("input", (e) => {
+    clearTimeout(revTimer);
+    revTimer = setTimeout(() => {
+      state[id === "f-rev-min" ? "revMin" : "revMax"] = e.target.value;
+      state.page = 0;
+      loadPage();
+    }, 400);
+  });
+});
+
 $("#reset").addEventListener("click", () => {
   state.filters = {};
   state.search = "";
@@ -739,10 +787,14 @@ $("#reset").addEventListener("click", () => {
   state.scoreExtra = [];
   state.wunschExtra = [];
   state.wunschGroups = [];
+  state.revMin = "";
+  state.revMax = "";
   resetAdvFilters();
   $("#search").value = "";
   $("#wunsch").value = "";
   $("#f-score").value = "";
+  $("#f-rev-min").value = "";
+  $("#f-rev-max").value = "";
   renderChips([]);
   document.querySelectorAll("#filters select[data-col]").forEach((s) => (s.value = ""));
   $("#sort").value = "bekanntheits_score.desc.nullslast";

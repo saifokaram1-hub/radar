@@ -89,6 +89,17 @@ a { color: var(--accent); }
   color: var(--text-dim);
   gap: 4px;
 }
+.filter-row input[type="number"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text);
+  padding: 7px 9px;
+  font-size: 0.88rem;
+  outline: none;
+  width: 110px;
+}
+.filter-row input[type="number"]:focus { border-color: var(--accent); }
 .filter-row select, .drawer select, .drawer input, .drawer textarea {
   background: var(--bg);
   border: 1px solid var(--border);

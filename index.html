@@ -38,25 +38,34 @@
       </div>
       <div class="filter-row" id="filters">
         <label>Verfügbar AT
-          <select data-col="verfuegbar_at"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option></select>
+          <select data-col="verfuegbar_at"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option><option>Nicht vorhanden</option></select>
         </label>
         <label>Verfügbar DE
-          <select data-col="verfuegbar_de"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option></select>
+          <select data-col="verfuegbar_de"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option><option>Nicht vorhanden</option></select>
         </label>
         <label>KYC
-          <select data-col="kyc"><option value="">Alle</option><option>Non-KYC</option><option>KYC</option><option>Unbekannt</option></select>
+          <select data-col="kyc"><option value="">Alle</option><option>Non-KYC</option><option>KYC</option><option>Unbekannt</option><option>Nicht vorhanden</option></select>
         </label>
         <label>Sportwetten
-          <select data-col="sportwetten"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option></select>
+          <select data-col="sportwetten"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option><option>Nicht vorhanden</option></select>
         </label>
         <label>Kette
-          <select data-col="kette"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option></select>
+          <select data-col="kette"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option><option>Nicht vorhanden</option></select>
         </label>
         <label>Affiliate
-          <select data-col="affiliate"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option></select>
+          <select data-col="affiliate"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option><option>Nicht vorhanden</option></select>
         </label>
         <label>CPA
-          <select data-col="cpa"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option></select>
+          <select data-col="cpa"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option><option>Nicht vorhanden</option></select>
+        </label>
+        <label>Website
+          <select data-col="website_status"><option value="">Alle</option><option>Online</option><option>Offline</option></select>
+        </label>
+        <label>Revshare ab %
+          <input type="number" id="f-rev-min" min="0" max="100" step="1" placeholder="z.B. 25" />
+        </label>
+        <label>Revshare bis %
+          <input type="number" id="f-rev-max" min="0" max="100" step="1" placeholder="z.B. 50" />
         </label>
         <label>Recherche
           <select data-col="recherche_status"><option value="">Alle</option><option>Offen</option><option>In Arbeit</option><option>Fertig</option></select>
@@ -70,6 +79,7 @@
             <option value="views.desc.nullslast">Aufrufe ↓</option>
             <option value="replies.desc.nullslast">Antworten ↓</option>
             <option value="title.asc">Titel A–Z</option>
+            <option value="revshare_wert.desc.nullslast">Revshare % ↓</option>
             <option value="updated_at.desc">Zuletzt bearbeitet</option>
           </select>
         </label>
