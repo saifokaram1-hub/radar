@@ -23,9 +23,18 @@
       <div class="stat-card"><span class="stat-value blue" id="stat-fertig">–</span><span class="stat-label">Recherche fertig</span></div>
     </section>
 
+    <section class="controls wunsch-box">
+      <div class="wunsch-row">
+        <input type="text" id="wunsch" placeholder="🤖 Wunsch-Suche: z.B. „Non-KYC Casinos mit Sportwetten für Österreich, die schnell auszahlen“ …" autocomplete="off" />
+        <button id="mic" class="btn-mic" type="button" title="Wunsch einsprechen (Spracheingabe)">🎤</button>
+        <button id="wunsch-go" class="btn-primary" type="button">Suchen</button>
+      </div>
+      <div class="chips" id="wunsch-chips" hidden></div>
+    </section>
+
     <section class="controls">
       <div class="search-row">
-        <input type="search" id="search" placeholder="🔍 Suche nach Titel, Website oder Notizen …" autocomplete="off" />
+        <input type="search" id="search" placeholder="🔍 Schnellsuche: Titel, Website oder Notizen …" autocomplete="off" />
       </div>
       <div class="filter-row" id="filters">
         <label>Verfügbar AT
@@ -51,6 +60,9 @@
         </label>
         <label>Recherche
           <select data-col="recherche_status"><option value="">Alle</option><option>Offen</option><option>In Arbeit</option><option>Fertig</option></select>
+        </label>
+        <label>Bekanntheit
+          <select id="f-score"><option value="">Alle</option><option value="hoch">Hoch (≥80)</option><option value="mittel">Mittel (50–79)</option><option value="niedrig">Niedrig (&lt;50)</option></select>
         </label>
         <label>Sortierung
           <select id="sort">
