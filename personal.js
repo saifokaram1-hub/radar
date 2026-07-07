@@ -36,7 +36,8 @@ async function initGate() {
     pwInput.type = pwInput.type === "password" ? "text" : "password";
   });
   const tryPw = async () => {
-    const h = await sha256(pwInput.value);
+    // Schreibweise egal: klein + ohne Leerzeichen am Rand
+    const h = await sha256(pwInput.value.trim().toLowerCase());
     if (h === hash) {
       localStorage.setItem("radar_pw", hash);
       gate.hidden = true;

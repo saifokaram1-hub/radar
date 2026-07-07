@@ -8,7 +8,7 @@
   <script>
     // Selbstheilung: prüft bei jedem Aufruf, ob eine neuere Version existiert.
     // Falls ja (z.B. veraltetes index.html im Cache), einmalig frisch neu laden.
-    window.__APP_V = "20260707d";
+    window.__APP_V = "20260707e";
     fetch("version.txt?t=" + Date.now(), { cache: "no-store" })
       .then((r) => r.text())
       .then((v) => {
@@ -20,7 +20,7 @@
       })
       .catch(() => {});
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260707d" />
+  <link rel="stylesheet" href="styles.css?v=20260707e" />
 </head>
 <body>
   <!-- Passwort-Tor -->
@@ -225,7 +225,7 @@
     <p>Datenquelle: <a href="https://bitcointalk.org/index.php?board=56.0" target="_blank" rel="noopener">bitcointalk.org · Gambling-Board</a> · Änderungen werden live in der Datenbank gespeichert.</p>
   </footer>
 
-  <script src="app.js?v=20260707d"></script>
-  <script src="personal.js?v=20260707d"></script>
+  <script src="app.js?v=20260707e"></script>
+  <script src="personal.js?v=20260707e"></script>
 </body>
 </html>
