@@ -35,16 +35,33 @@ async function initGate() {
   $("#gate-eye")?.addEventListener("click", () => {
     pwInput.type = pwInput.type === "password" ? "text" : "password";
   });
+  const zeigeGateFehler = (text) => {
+    const el = $("#gate-error");
+    if (el) { el.textContent = text; el.hidden = false; }
+    else alert(text);
+  };
   const tryPw = async () => {
-    // Schreibweise egal: klein + ohne Leerzeichen am Rand
-    const h = await sha256(pwInput.value.trim().toLowerCase());
-    if (h === hash) {
-      localStorage.setItem("radar_pw", hash);
-      gate.hidden = true;
-      initUserGate();
-    } else {
-      $("#gate-error").hidden = false;
-      pwInput.select();
+    try {
+      const eingabe = pwInput.value.trim().toLowerCase();
+      // Schreibweise egal. Vergleich sowohl per SHA-256 als auch als Klartext-Fallback,
+      // falls crypto.subtle im Browser nicht verfügbar ist.
+      let treffer = false;
+      try {
+        const h = await sha256(eingabe);
+        treffer = h === hash;
+      } catch {
+        treffer = eingabe === "radar26"; // Fallback ohne Krypto-API
+      }
+      if (treffer) {
+        localStorage.setItem("radar_pw", hash);
+        gate.hidden = true;
+        initUserGate();
+      } else {
+        zeigeGateFehler("Falsches Passwort.");
+        pwInput.select();
+      }
+    } catch (e) {
+      zeigeGateFehler("Fehler: " + (e && e.message ? e.message : e) + " – bitte Seite neu laden.");
     }
   };
   $("#gate-go")?.addEventListener("click", tryPw);

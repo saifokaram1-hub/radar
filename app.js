@@ -2,15 +2,17 @@
 
 // Sicherheitsnetz: Wenn irgendwo ein Skriptfehler auftritt (z.B. veraltete Version
 // im Browser-Cache), niemals stumm mit toten Buttons dastehen, sondern Hinweis zeigen.
-window.addEventListener("error", () => {
+function zeigeFehlerLeiste() {
   if (document.getElementById("reload-hint") || !document.body) return;
   const d = document.createElement("div");
   d.id = "reload-hint";
   d.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:9999;background:#b91c1c;color:#fff;padding:12px 16px;text-align:center;font:14px/1.4 sans-serif;";
   d.innerHTML = '⚠ Da hat etwas nicht geklappt – vermutlich eine veraltete Version im Speicher. ' +
-    '<button onclick="location.reload()" style="margin-left:8px;padding:6px 14px;border-radius:6px;border:none;background:#fff;color:#b91c1c;font-weight:700;cursor:pointer">Jetzt neu laden</button>';
+    '<button onclick="location.replace(location.pathname+\'?fresh=\'+Date.now())" style="margin-left:8px;padding:6px 14px;border-radius:6px;border:none;background:#fff;color:#b91c1c;font-weight:700;cursor:pointer">Jetzt frisch laden</button>';
   document.body.appendChild(d);
-});
+}
+window.addEventListener("error", zeigeFehlerLeiste);
+window.addEventListener("unhandledrejection", zeigeFehlerLeiste);
 
 const SUPABASE_URL = "https://abeheiewozqbkylmgrqr.supabase.co";
 const SUPABASE_KEY = "sb_publishable_OysS4ElWHUiZNcC5aVdt8g__8LkRzh4";

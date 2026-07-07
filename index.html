@@ -6,21 +6,25 @@
   <meta name="robots" content="noindex" />
   <title>Crypto Gambling Radar</title>
   <script>
-    // Selbstheilung: prüft bei jedem Aufruf, ob eine neuere Version existiert.
-    // Falls ja (z.B. veraltetes index.html im Cache), einmalig frisch neu laden.
-    window.__APP_V = "20260707e";
-    fetch("version.txt?t=" + Date.now(), { cache: "no-store" })
-      .then((r) => r.text())
-      .then((v) => {
-        v = v.trim();
-        if (v && v !== window.__APP_V && !sessionStorage.getItem("v_" + v)) {
-          sessionStorage.setItem("v_" + v, "1");
-          location.reload();
-        }
-      })
-      .catch(() => {});
+    // Bulletproof-Selbstheilung: prüft bei jedem Aufruf, ob eine neuere Version existiert.
+    // Falls ja, per NEUER Adresse (?fresh=...) neu laden – das umgeht garantiert den
+    // Browser-Cache der alten Seite (anders als ein normales Neuladen).
+    window.__APP_V = "20260707f";
+    (function () {
+      try {
+        fetch("version.txt?t=" + Date.now(), { cache: "no-store" })
+          .then((r) => r.text())
+          .then((v) => {
+            v = (v || "").trim();
+            if (v && v !== window.__APP_V && location.search.indexOf("fresh=") === -1) {
+              location.replace(location.pathname + "?fresh=" + v);
+            }
+          })
+          .catch(() => {});
+      } catch (e) {}
+    })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260707e" />
+  <link rel="stylesheet" href="styles.css?v=20260707f" />
 </head>
 <body>
   <!-- Passwort-Tor -->
@@ -225,7 +229,7 @@
     <p>Datenquelle: <a href="https://bitcointalk.org/index.php?board=56.0" target="_blank" rel="noopener">bitcointalk.org · Gambling-Board</a> · Änderungen werden live in der Datenbank gespeichert.</p>
   </footer>
 
-  <script src="app.js?v=20260707e"></script>
-  <script src="personal.js?v=20260707e"></script>
+  <script src="app.js?v=20260707f"></script>
+  <script src="personal.js?v=20260707f"></script>
 </body>
 </html>
