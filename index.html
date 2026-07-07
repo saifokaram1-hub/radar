@@ -67,11 +67,30 @@
       </div>
       <div class="user-chip" id="user-chip" hidden>
         <span id="user-chip-name"></span>
+        <button type="button" id="admin-open" class="btn-secondary" hidden>🛠 Admin</button>
         <button type="button" id="mb-open" class="btn-secondary">Mein Bereich</button>
-        <button type="button" id="user-switch" class="btn-icon" title="Nutzer wechseln">⇄</button>
+        <button type="button" id="user-switch" class="btn-icon" title="Abmelden">⇄</button>
       </div>
     </div>
   </header>
+
+  <!-- Cookie-/Einwilligungs-Banner -->
+  <div class="cookie-banner" id="cookie-banner" hidden>
+    <div class="cookie-inner">
+      <span>🍪 Diese Plattform speichert deine Auswahl (Likes, gespeicherte Einträge, Notizen, Ordner) in deinem persönlichen Bereich. Mit „Akzeptieren“ stimmst du der Nutzung zu und schaltest deinen Zugang frei.</span>
+      <button type="button" id="cookie-accept" class="btn-primary">Akzeptieren</button>
+    </div>
+  </div>
+
+  <!-- Admin-Dashboard -->
+  <div class="drawer-backdrop" id="admin-backdrop" hidden></div>
+  <aside class="admin-panel" id="admin-panel" hidden>
+    <div class="drawer-head">
+      <h2>🛠 Admin-Dashboard – alle Accounts</h2>
+      <button id="admin-close" class="btn-icon" type="button" aria-label="Schließen">✕</button>
+    </div>
+    <div class="admin-body" id="admin-body"></div>
+  </aside>
 
   <main class="container">
     <section class="stats" id="stats">

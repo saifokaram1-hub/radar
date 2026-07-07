@@ -6,7 +6,8 @@ const ITEMS_API = `${SUPABASE_URL}/rest/v1/user_items`;
 const ORDNER_API = `${SUPABASE_URL}/rest/v1/ordner`;
 const ORDNER_ITEMS_API = `${SUPABASE_URL}/rest/v1/ordner_items`;
 
-let meinUser = null;                 // { id, username }
+let meinUser = null;                 // { id, username, is_admin, aktiviert }
+let adminPw = null;                  // Admin-Passwort nur im Speicher dieser Sitzung
 const myItems = new Map();           // casino_id -> { liked, gespeichert, notiz }
 let myFolders = [];                  // [{ id, name }]
 const folderItems = new Map();       // ordner_id -> Set(casino_id)
@@ -54,11 +55,14 @@ async function initUserGate() {
   const saved = localStorage.getItem("radar_user");
   if (saved) {
     try {
-      meinUser = JSON.parse(saved);
-      // prüfen, ob der Nutzer noch existiert
-      const res = await fetch(`${NUTZER_API}?id=eq.${meinUser.id}&select=id,username`, { headers: HEADERS });
+      const hint = JSON.parse(saved);
+      // prüfen, ob der Nutzer noch existiert + aktuellen Aktiviert-Status holen
+      const res = await fetch(`${NUTZER_API}?id=eq.${hint.id}&select=id,username,aktiviert`, { headers: HEADERS });
       const rows = await res.json();
-      if (rows.length) { meinUser = rows[0]; return userReady(); }
+      if (rows.length) {
+        meinUser = { id: rows[0].id, username: rows[0].username, aktiviert: rows[0].aktiviert, is_admin: !!hint.is_admin };
+        return userReady();
+      }
     } catch { /* neu anmelden */ }
     meinUser = null;
     localStorage.removeItem("radar_user");
@@ -89,45 +93,35 @@ async function initUserGate() {
     pw2Input.type = t;
   });
 
-  const userHash = (name, pw) => sha256(name.toLowerCase() + ":" + pw);
+  const FEHLER = {
+    name_short: "Name: bitte mindestens 2 Zeichen.",
+    pw_short: "Passwort: bitte mindestens 4 Zeichen.",
+    exists: "Dieser Name ist schon vergeben – bitte anmelden oder anderen Namen wählen.",
+    no_user: "Diesen Namen gibt es noch nicht – bitte zuerst einen Account erstellen.",
+    wrong_pw: "Falsches Passwort.",
+  };
 
   const go = async () => {
     const name = input.value.trim();
     const pw = pwInput.value;
-    if (name.length < 2) { showUserError("Name: bitte mindestens 2 Zeichen."); return; }
-    if (pw.length < 4) { showUserError("Passwort: bitte mindestens 4 Zeichen."); return; }
+    if (name.length < 2) { showUserError(FEHLER.name_short); return; }
+    if (pw.length < 4) { showUserError(FEHLER.pw_short); return; }
+    if (modus === "register" && pw !== pw2Input.value) { showUserError("Die Passwörter stimmen nicht überein."); return; }
     try {
-      const res = await fetch(`${NUTZER_API}?username=eq.${encodeURIComponent(name)}&select=id,username,passwort_hash`, { headers: HEADERS });
-      const rows = await res.json();
-      const hash = await userHash(name, pw);
+      const fn = modus === "register" ? "app_register" : "app_login";
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+        method: "POST",
+        headers: { ...HEADERS, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_username: name, p_passwort: pw }),
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if (data.error) { showUserError(FEHLER[data.error] || "Fehler: " + data.error); return; }
 
-      if (modus === "register") {
-        if (rows.length) { showUserError("Dieser Name ist schon vergeben – bitte anmelden oder anderen Namen wählen."); return; }
-        if (pw !== pw2Input.value) { showUserError("Die Passwörter stimmen nicht überein."); return; }
-        const ins = await fetch(NUTZER_API, {
-          method: "POST",
-          headers: { ...HEADERS, Prefer: "return=representation" },
-          body: JSON.stringify({ username: name, passwort_hash: hash }),
-        });
-        if (!ins.ok) throw new Error("HTTP " + ins.status);
-        meinUser = { id: (await ins.json())[0].id, username: name };
-      } else {
-        if (!rows.length) { showUserError("Diesen Namen gibt es noch nicht – bitte zuerst einen Account erstellen."); return; }
-        const u = rows[0];
-        if (u.passwort_hash == null) {
-          // Alt-Account ohne Passwort: beim ersten Login das eingegebene Passwort setzen
-          await fetch(`${NUTZER_API}?id=eq.${u.id}`, {
-            method: "PATCH",
-            headers: { ...HEADERS, Prefer: "return=minimal" },
-            body: JSON.stringify({ passwort_hash: hash }),
-          });
-        } else if (u.passwort_hash !== hash) {
-          showUserError("Falsches Passwort.");
-          return;
-        }
-        meinUser = { id: u.id, username: u.username };
-      }
-      localStorage.setItem("radar_user", JSON.stringify(meinUser));
+      meinUser = { id: data.id, username: data.username, is_admin: !!data.is_admin, aktiviert: !!data.aktiviert };
+      if (meinUser.is_admin) adminPw = pw; // für das Admin-Dashboard in dieser Sitzung merken
+      // localStorage nur mit unkritischen Infos (kein Passwort)
+      localStorage.setItem("radar_user", JSON.stringify({ id: meinUser.id, username: meinUser.username, is_admin: meinUser.is_admin }));
       gate.hidden = true;
       userReady();
     } catch (e) {
@@ -148,10 +142,26 @@ function showUserError(msg) {
 async function userReady() {
   $("#user-chip").hidden = false;
   $("#user-chip-name").textContent = "👤 " + meinUser.username;
+  $("#admin-open").hidden = !meinUser.is_admin;
   await ladePersoenlicheDaten();
   fuelleMeineAuswahlFilter();
   loadPage(); // Tabelle neu rendern, damit Like/Speichern-Buttons erscheinen
+  // Cookie-/Einwilligungs-Banner = Freischaltung des Accounts
+  if (!meinUser.aktiviert) $("#cookie-banner").hidden = false;
 }
+
+$("#cookie-accept").addEventListener("click", async () => {
+  $("#cookie-banner").hidden = true;
+  if (!meinUser || meinUser.aktiviert) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/rpc/app_activate`, {
+      method: "POST",
+      headers: { ...HEADERS, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_user_id: meinUser.id }),
+    });
+    meinUser.aktiviert = true;
+  } catch { /* nicht kritisch */ }
+});
 
 async function ladePersoenlicheDaten() {
   myItems.clear();
@@ -396,6 +406,83 @@ $("#user-switch").addEventListener("click", () => {
   localStorage.removeItem("radar_user");
   location.reload();
 });
+
+/* ---------- Admin-Dashboard ---------- */
+async function openAdmin() {
+  if (!meinUser?.is_admin) return;
+  if (!adminPw) {
+    adminPw = prompt("Zur Sicherheit bitte dein Admin-Passwort eingeben:");
+    if (!adminPw) return;
+  }
+  $("#admin-panel").hidden = false;
+  $("#admin-backdrop").hidden = false;
+  const body = $("#admin-body");
+  body.innerHTML = '<span class="admin-empty">Lade alle Accounts …</span>';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_dashboard`, {
+      method: "POST",
+      headers: { ...HEADERS, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_admin_username: meinUser.username, p_admin_passwort: adminPw }),
+    });
+    const data = await res.json();
+    if (data.error || !Array.isArray(data)) {
+      adminPw = null;
+      body.innerHTML = '<span class="admin-empty">Kein Admin-Zugriff – Passwort falsch. Bitte erneut öffnen.</span>';
+      return;
+    }
+    renderAdmin(data);
+  } catch (e) {
+    body.innerHTML = '<span class="admin-empty">Fehler beim Laden: ' + esc(e.message) + "</span>";
+  }
+}
+
+function renderAdmin(users) {
+  const gesamt = users.length;
+  const aktiv = users.filter((u) => u.aktiviert).length;
+  const mitDaten = users.filter((u) => u.eintraege.length).length;
+  const stats = `<div class="admin-stats">
+    <div class="admin-stat"><b>${gesamt}</b> Accounts</div>
+    <div class="admin-stat"><b>${aktiv}</b> aktiviert (Cookies akzeptiert)</div>
+    <div class="admin-stat"><b>${mitDaten}</b> mit gespeicherten Einträgen</div>
+  </div>`;
+
+  const list = users.map((u) => {
+    const eintraege = u.eintraege.map((e) => {
+      const icons = (e.liked ? "❤" : "") + (e.gespeichert ? "🔖" : "");
+      return `<div class="admin-entry">
+        <span class="ae-icons">${icons || "•"}</span>
+        <span>${e.website ? `<b>${esc(e.website)}</b> · ` : ""}${esc(e.titel)}${e.notiz ? `<br><span class="ae-note">📝 ${esc(e.notiz)}</span>` : ""}</span>
+      </div>`;
+    }).join("") || '<span class="admin-empty">Noch keine gespeicherten Einträge.</span>';
+    const ordnerTxt = u.ordner.length ? "📁 " + u.ordner.map(esc).join(", ") : "";
+    return `<div class="admin-user">
+      <div class="admin-user-head">
+        <span class="au-name">👤 ${esc(u.username)}</span>
+        <span class="au-pw" title="Passwort">🔑 ${esc(u.passwort_klar || "–")}</span>
+        <span class="au-meta">❤ ${u.anzahl_likes} · 🔖 ${u.anzahl_gespeichert} · 📝 ${u.anzahl_notizen} · 📁 ${u.anzahl_ordner}</span>
+        <span class="au-badge badge ${u.aktiviert ? "yes" : "neutral"}">${u.aktiviert ? "aktiviert" : "nicht aktiviert"}${u.is_admin ? " · ADMIN" : ""}</span>
+      </div>
+      <div class="admin-user-detail">
+        ${ordnerTxt ? `<div class="kette-hint" style="margin-bottom:8px">${ordnerTxt}</div>` : ""}
+        ${eintraege}
+      </div>
+    </div>`;
+  }).join("");
+
+  $("#admin-body").innerHTML = stats + list;
+  $("#admin-body").querySelectorAll(".admin-user-head").forEach((head) => {
+    head.addEventListener("click", () => head.parentElement.classList.toggle("open"));
+  });
+}
+
+function closeAdmin() {
+  $("#admin-panel").hidden = true;
+  $("#admin-backdrop").hidden = true;
+}
+
+$("#admin-open").addEventListener("click", openAdmin);
+$("#admin-close").addEventListener("click", closeAdmin);
+$("#admin-backdrop").addEventListener("click", closeAdmin);
 
 /* ---------- Start ---------- */
 initGate();
