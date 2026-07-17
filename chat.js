@@ -24,7 +24,15 @@ function chatAdd(kind, html) {
 function chatEntryHtml(r) {
   chatCache.set(r.id, r);
   const site = r.website ? `<b>${esc(r.website)}</b> · ` : "";
-  return `<span class="chat-entry" data-id="${r.id}">#${r.nummer} · ${site}${esc((r.title || "").slice(0, 70))} <span style="color:var(--text-dim)">(Bekanntheit ${r.bekanntheits_score ?? "–"})</span></span>`;
+  const infos = [`Bekanntheit ${r.bekanntheits_score ?? "–"}`];
+  if (r.kyc) infos.push(esc(r.kyc));
+  infos.push((r.verfuegbar_de === "Ja" ? "DE ✓" : "DE ✗") + " / " + (r.verfuegbar_at === "Ja" ? "AT ✓" : "AT ✗"));
+  if (r.sportwetten === "Ja") infos.push("Sportwetten");
+  if (r.revshare_wert != null) infos.push(`Revshare ${r.revshare_wert}%`);
+  else if (r.affiliate === "Ja") infos.push("Affiliate (Satz verhandeln)");
+  if (r.cpa_wert != null) infos.push(`CPA $${r.cpa_wert}`);
+  else if (r.cpa === "Ja") infos.push("CPA möglich");
+  return `<span class="chat-entry" data-id="${r.id}">#${r.nummer} · ${site}${esc((r.title || "").slice(0, 60))}<br><span style="color:var(--text-dim);font-size:0.78rem">${infos.join(" · ")}</span></span>`;
 }
 
 // parseWunsch-Ausgabe (aus app.js) in PostgREST-Parameter umsetzen
@@ -66,7 +74,7 @@ async function chatAnswer(frage) {
       const partner = r.kette_partner ? `<br>🔗 <b>Verbunden mit:</b> ${esc(r.kette_partner)}` : "";
       return chatAdd("bot", `Das ist <b>Nr. ${r.nummer}</b>:<br>${chatEntryHtml(r)}<br><br>` +
         `<b>Website:</b> ${esc(r.website || "–")}<br><b>KYC:</b> ${esc(r.kyc)} · <b>Sportwetten:</b> ${esc(r.sportwetten)} · <b>Verfügbar AT:</b> ${esc(r.verfuegbar_at)}<br>` +
-        `<b>Angebot:</b> ${esc(r.allgemeines_angebot)}<br><b>Affiliate:</b> ${esc(r.affiliate)} · <b>Revshare:</b> ${esc(r.revshare_prozent)}${partner}<br><br>` +
+        `<b>Angebot:</b> ${esc(r.allgemeines_angebot)}<br><b>Affiliate:</b> ${esc(r.affiliate)} · <b>Revshare:</b> ${esc(r.revshare_prozent)} · <b>CPA:</b> ${esc(r.cpa)}${r.cpa_wert != null ? ` ($${r.cpa_wert})` : ""}${partner}<br><br>` +
         `<span style="color:var(--text-dim)">Klick oben für alle Details.</span>`);
     }
     return chatAdd("bot", `Ich habe keinen Eintrag mit der Nummer ${nr} gefunden. Die Nummern gehen von 1 bis 11.886.`);

@@ -36,6 +36,8 @@ const state = {
   meineAuswahl: "",  // persönlicher Filter: liked/gespeichert/notiz/ordner:<id>
   dach: "",          // DE/AT-Verfügbarkeit kombiniert: oder/und/de/at/keins
   standortFilter: "", // Firmen-Standort: de/at/int
+  cpaMin: "",        // CPA-$-Filter ab
+  cpaMax: "",        // CPA-$-Filter bis
 };
 let currentRecord = null;
 
@@ -61,6 +63,8 @@ function buildFilterParams() {
   if (state.trackerStep) p.append(`tracker->>${state.trackerStep}`, "eq.true");
   if (state.revMin !== null && state.revMin !== "") p.append("revshare_wert", `gte.${state.revMin}`);
   if (state.revMax !== null && state.revMax !== "") p.append("revshare_wert", `lte.${state.revMax}`);
+  if (state.cpaMin !== null && state.cpaMin !== "") p.append("cpa_wert", `gte.${state.cpaMin}`);
+  if (state.cpaMax !== null && state.cpaMax !== "") p.append("cpa_wert", `lte.${state.cpaMax}`);
 
   // Kombinierte DE/AT-Verfügbarkeit
   if (state.dach === "und") { p.append("verfuegbar_de", "eq.Ja"); p.append("verfuegbar_at", "eq.Ja"); }
@@ -181,7 +185,7 @@ function statusBadge(v) {
 function renderRows(rows) {
   const tbody = $("#tbody");
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-dim);padding:30px">Keine Treffer.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--text-dim);padding:30px">Keine Treffer.</td></tr>';
     return;
   }
   tbody.innerHTML = rows
@@ -196,9 +200,11 @@ function renderRows(rows) {
         <td>${r.website ? `<span class="website">${esc(r.website)}</span>` : '<span style="color:var(--text-dim)">–</span>'}</td>
         <td>${scoreBadge(r.bekanntheits_score)}</td>
         <td>${kycBadge(r.kyc)}</td>
+        <td class="dach-cell"><span class="badge ${r.verfuegbar_de === "Ja" ? "yes" : "neutral"}" title="Verfügbar in Deutschland: ${esc(r.verfuegbar_de)}">DE</span> <span class="badge ${r.verfuegbar_at === "Ja" ? "yes" : "neutral"}" title="Verfügbar in Österreich: ${esc(r.verfuegbar_at)}">AT</span></td>
         <td>${yesNoBadge(r.sportwetten)}</td>
         <td>${yesNoBadge(r.affiliate)}</td>
-        <td>${statusBadge(r.recherche_status)}</td>
+        <td>${r.revshare_wert != null ? `<span class="badge score-high">${r.revshare_wert}%</span>` : r.affiliate === "Ja" ? '<span class="badge neutral" title="Affiliate vorhanden, Satz verhandelbar">verh.</span>' : '<span style="color:var(--text-dim)">–</span>'}</td>
+        <td>${r.cpa_wert != null ? `<span class="badge score-high">$${r.cpa_wert}</span>` : r.cpa === "Ja" ? '<span class="badge yes">Ja</span>' : '<span style="color:var(--text-dim)">–</span>'}</td>
         <td>${r.views != null ? r.views.toLocaleString("de-AT") : "–"}</td>
         <td><a class="thread-link" href="${esc(r.thread_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Öffnen ↗</a></td>
       </tr>`
@@ -638,6 +644,14 @@ function parseWunsch(raw) {
     landAlsStandort = true;
   }
 
+  // CPA-Betrags-Bereiche ("cpa ab 200", "cpa unter $500")
+  if (/\bcpa\b/.test(text)) {
+    const cpaAb = text.match(/(?:ab|über|ueber|mindestens|mind|minimum|mehr als)\s*\$?\s*(\d{2,5})(?!\s*%)/);
+    const cpaBis = text.match(/(?:unter|maximal|max|höchstens|hoechstens|weniger als)\s*\$?\s*(\d{2,5})(?!\s*%)/);
+    if (cpaAb) { out.extra.push(["cpa_wert", `gte.${cpaAb[1]}`]); out.chips.push(`CPA ≥ $${cpaAb[1]}`); }
+    if (cpaBis) { out.extra.push(["cpa_wert", `lte.${cpaBis[1]}`]); out.chips.push(`CPA ≤ $${cpaBis[1]}`); }
+  }
+
   // Revshare-Prozent-Bereiche ("revshare ab 25%", "unter 40%")
   let revPhrase = false;
   if (/rev[\s-]?share|revenue|provision|kommission/.test(text)) {
@@ -931,11 +945,12 @@ $("#f-standort")?.addEventListener("change", (e) => {
 });
 
 let revTimer;
-["f-rev-min", "f-rev-max"].forEach((id) => {
+const BEREICHS_FILTER = { "f-rev-min": "revMin", "f-rev-max": "revMax", "f-cpa-min": "cpaMin", "f-cpa-max": "cpaMax" };
+Object.entries(BEREICHS_FILTER).forEach(([id, key]) => {
   document.getElementById(id)?.addEventListener("input", (e) => {
     clearTimeout(revTimer);
     revTimer = setTimeout(() => {
-      state[id === "f-rev-min" ? "revMin" : "revMax"] = e.target.value;
+      state[key] = e.target.value;
       state.page = 0;
       loadPage();
     }, 400);
@@ -954,12 +969,16 @@ $("#reset")?.addEventListener("click", () => {
   state.meineAuswahl = "";
   state.dach = "";
   state.standortFilter = "";
+  state.cpaMin = "";
+  state.cpaMax = "";
   resetAdvFilters();
   $("#search").value = "";
   $("#wunsch").value = "";
   $("#f-score").value = "";
   $("#f-rev-min").value = "";
   $("#f-rev-max").value = "";
+  $("#f-cpa-min").value = "";
+  $("#f-cpa-max").value = "";
   $("#f-meine").value = "";
   $("#f-dach").value = "";
   $("#f-standort").value = "";
@@ -993,7 +1012,7 @@ const EXPORT_SPALTEN = [
   ["auszahlung_methoden", "Auszahlung"], ["auszahlung_dauer", "Auszahlungsdauer"],
   ["registrierung_aufwand", "Registrierung"], ["lizenz", "Lizenz"],
   ["kette", "Kette"], ["kette_firma", "Firma"], ["kette_partner", "Verbundene Seiten"],
-  ["affiliate", "Affiliate"], ["cpa", "CPA"], ["cpa_hoehe", "CPA-Höhe"], ["revshare_prozent", "Revshare"],
+  ["affiliate", "Affiliate"], ["cpa", "CPA"], ["cpa_hoehe", "CPA-Höhe"], ["cpa_wert", "CPA-Betrag ($)"], ["revshare_prozent", "Revshare"], ["revshare_wert", "Revshare (%)"],
   ["affiliate_kontakt", "Affiliate-Kontakt"], ["spieler_zahlen", "Spielerzahlen"],
   ["kunden_bewertungen", "Bewertungen"], ["views", "Aufrufe"], ["thread_url", "Bitcointalk-Link"],
 ];

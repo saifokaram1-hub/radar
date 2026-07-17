@@ -9,7 +9,7 @@
     // Bulletproof-Selbstheilung: prüft bei jedem Aufruf, ob eine neuere Version existiert.
     // Falls ja, per NEUER Adresse (?fresh=...) neu laden – das umgeht garantiert den
     // Browser-Cache der alten Seite (anders als ein normales Neuladen).
-    window.__APP_V = "20260707j";
+    window.__APP_V = "20260707k";
     (function () {
       try {
         fetch("version.txt?t=" + Date.now(), { cache: "no-store" })
@@ -24,7 +24,7 @@
       } catch (e) {}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260707j" />
+  <link rel="stylesheet" href="styles.css?v=20260707k" />
 </head>
 <body>
   <!-- Passwort-Tor -->
@@ -175,6 +175,12 @@
         <label>Revshare bis %
           <input type="number" id="f-rev-max" min="0" max="100" step="1" placeholder="z.B. 50" />
         </label>
+        <label>CPA ab $
+          <input type="number" id="f-cpa-min" min="0" step="10" placeholder="z.B. 100" />
+        </label>
+        <label>CPA bis $
+          <input type="number" id="f-cpa-max" min="0" step="10" placeholder="z.B. 500" />
+        </label>
         <label>Recherche
           <select data-col="recherche_status"><option value="">Alle</option><option>Offen</option><option>In Arbeit</option><option>Fertig</option></select>
         </label>
@@ -232,9 +238,11 @@
               <th>Website</th>
               <th>Bekanntheit</th>
               <th>KYC</th>
+              <th>DE / AT</th>
               <th>Sportwetten</th>
               <th>Affiliate</th>
-              <th>Recherche</th>
+              <th>Revshare</th>
+              <th>CPA</th>
               <th>Aufrufe</th>
               <th>Thread</th>
             </tr>
@@ -277,8 +285,8 @@
     <p>Datenquelle: <a href="https://bitcointalk.org/index.php?board=56.0" target="_blank" rel="noopener">bitcointalk.org · Gambling-Board</a> · Änderungen werden live in der Datenbank gespeichert.</p>
   </footer>
 
-  <script src="app.js?v=20260707j"></script>
-  <script src="personal.js?v=20260707j"></script>
-  <script src="chat.js?v=20260707j"></script>
+  <script src="app.js?v=20260707k"></script>
+  <script src="personal.js?v=20260707k"></script>
+  <script src="chat.js?v=20260707k"></script>
 </body>
 </html>

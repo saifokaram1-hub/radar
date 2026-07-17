@@ -301,6 +301,7 @@ td .website { color: var(--accent); font-weight: 600; }
 
 /* Nummer-Spalte + Ketten-Vorschau in der Zeile */
 .nr-cell { color: var(--accent); font-weight: 700; font-size: 0.82rem; white-space: nowrap; }
+.dach-cell { white-space: nowrap; }
 .t-title { max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .t-kette {
   margin-top: 3px;
