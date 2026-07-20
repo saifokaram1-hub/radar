@@ -316,6 +316,9 @@ td .website { color: var(--accent); font-weight: 600; }
 .bew-lbl { width: 110px; color: var(--text-dim); font-size: 0.85rem; flex-shrink: 0; }
 .bew-row .bew-bar { width: 120px; height: 11px; }
 .bew-hinweis { color: var(--text-dim); font-size: 0.82rem; margin-top: 4px; }
+.bew-zus { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin-top: 6px; font-size: 0.85rem; line-height: 1.5; color: var(--text); }
+.bew-zus-t { display: block; color: var(--accent); font-weight: 700; font-size: 0.8rem; margin-bottom: 3px; }
+.badge.dach-unk { background: rgba(107,114,128,.18); color: var(--text-dim); border: 1px dashed var(--border); }
 .t-title { max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .t-kette {
   margin-top: 3px;

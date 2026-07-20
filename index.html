@@ -9,7 +9,7 @@
     // Bulletproof-Selbstheilung: prüft bei jedem Aufruf, ob eine neuere Version existiert.
     // Falls ja, per NEUER Adresse (?fresh=...) neu laden – das umgeht garantiert den
     // Browser-Cache der alten Seite (anders als ein normales Neuladen).
-    window.__APP_V = "20260707n";
+    window.__APP_V = "20260707o";
     (function () {
       try {
         fetch("version.txt?t=" + Date.now(), { cache: "no-store" })
@@ -24,7 +24,7 @@
       } catch (e) {}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260707n" />
+  <link rel="stylesheet" href="styles.css?v=20260707o" />
 </head>
 <body>
   <!-- Passwort-Tor -->
@@ -146,10 +146,10 @@
           </select>
         </label>
         <label>Verfügbar AT
-          <select data-col="verfuegbar_at"><option value="">Alle</option><option>Ja</option><option>Nein</option></select>
+          <select data-col="verfuegbar_at"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option></select>
         </label>
         <label>Verfügbar DE
-          <select data-col="verfuegbar_de"><option value="">Alle</option><option>Ja</option><option>Nein</option></select>
+          <select data-col="verfuegbar_de"><option value="">Alle</option><option>Ja</option><option>Nein</option><option>Unbekannt</option></select>
         </label>
         <label>KYC
           <select data-col="kyc"><option value="">Alle</option><option>Non-KYC</option><option>KYC</option><option>Unbekannt</option><option>Nicht vorhanden</option></select>
@@ -302,8 +302,8 @@
     <p>Datenquelle: <a href="https://bitcointalk.org/index.php?board=56.0" target="_blank" rel="noopener">bitcointalk.org · Gambling-Board</a> · Änderungen werden live in der Datenbank gespeichert.</p>
   </footer>
 
-  <script src="app.js?v=20260707n"></script>
-  <script src="personal.js?v=20260707n"></script>
-  <script src="chat.js?v=20260707n"></script>
+  <script src="app.js?v=20260707o"></script>
+  <script src="personal.js?v=20260707o"></script>
+  <script src="chat.js?v=20260707o"></script>
 </body>
 </html>

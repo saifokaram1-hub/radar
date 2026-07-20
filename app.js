@@ -185,6 +185,12 @@ function statusBadge(v) {
   if (v === "In Arbeit") return '<span class="badge status-arbeit">In Arbeit</span>';
   return '<span class="badge neutral">Offen</span>';
 }
+// DE/AT-Badge: Ja=grün, Nein=grau, Unbekannt=blass mit ?
+function dachBadge(land, wert) {
+  if (wert === "Ja") return `<span class="badge yes" title="Verfügbar in ${land}: Ja">${land} ✓</span>`;
+  if (wert === "Nein") return `<span class="badge neutral" title="In ${land} nicht verfügbar (Website offline)">${land} ✗</span>`;
+  return `<span class="badge dach-unk" title="Verfügbarkeit in ${land} unbekannt (keine erreichbare Website)">${land} ?</span>`;
+}
 // Farbe von dunkelrot (0) über gelb (5) nach grün (10)
 function bewFarbe(note) {
   const t = Math.max(0, Math.min(10, note)) / 10;
@@ -230,7 +236,7 @@ function renderRows(rows) {
         <td data-label="Website">${r.website ? `<span class="website">${esc(r.website)}</span>` : '<span style="color:var(--text-dim)">–</span>'}</td>
         <td data-label="Bekanntheit">${scoreBadge(r.bekanntheits_score)}</td>
         <td data-label="KYC">${kycBadge(r.kyc)}</td>
-        <td class="dach-cell" data-label="DE / AT"><span class="badge ${r.verfuegbar_de === "Ja" ? "yes" : "neutral"}" title="Verfügbar in Deutschland: ${esc(r.verfuegbar_de)}">DE</span> <span class="badge ${r.verfuegbar_at === "Ja" ? "yes" : "neutral"}" title="Verfügbar in Österreich: ${esc(r.verfuegbar_at)}">AT</span></td>
+        <td class="dach-cell" data-label="DE / AT">${dachBadge("DE", r.verfuegbar_de)} ${dachBadge("AT", r.verfuegbar_at)}</td>
         <td data-label="Sportwetten">${yesNoBadge(r.sportwetten)}</td>
         <td data-label="Affiliate">${yesNoBadge(r.affiliate)}</td>
         <td data-label="Revshare">${r.revshare_wert != null ? `<span class="badge score-high">${r.revshare_wert}%</span>` : r.affiliate === "Ja" ? '<span class="badge neutral" title="Affiliate vorhanden, Satz verhandelbar">verh.</span>' : '<span style="color:var(--text-dim)">–</span>'}</td>
@@ -472,7 +478,9 @@ function openDrawer(record) {
               ? '<div class="bew-row"><span class="bew-lbl">KYC-Qualität</span><span class="bew-none">entfällt (Non-KYC)</span></div>'
               : `<div class="bew-row"><span class="bew-lbl">KYC-Qualität</span>${bewBalken(record.bewertung_kyc, null, true, true)}</div>`}
             <div class="bew-row"><span class="bew-lbl">Auszahlungen</span>${bewBalken(record.bewertung_auszahlung, null, true, true)}</div>
-            <div class="bew-hinweis">💸 ${esc(record.auszahlung_problem_ab || "–")}</div>
+            ${record.kyc_zusammenfassung ? `<div class="bew-zus"><span class="bew-zus-t">🔐 KYC-Fazit</span>${esc(record.kyc_zusammenfassung)}</div>` : ""}
+            ${record.auszahlung_zusammenfassung ? `<div class="bew-zus"><span class="bew-zus-t">💸 Auszahlungs-Fazit</span>${esc(record.auszahlung_zusammenfassung)}</div>` : `<div class="bew-hinweis">💸 ${esc(record.auszahlung_problem_ab || "–")}</div>`}
+            ${record.zahlungsmethoden_komm ? `<div class="bew-hinweis">💳 In Kommentaren genannte Zahlungsmittel: <b>${esc(record.zahlungsmethoden_komm)}</b></div>` : ""}
             <div class="bew-hinweis">💬 ${record.bewertung_kommentare || 0} Kommentare ausgewertet · <a href="${esc(kommentarLink)}" target="_blank" rel="noopener">Kommentare im Thread ansehen ↗</a></div>
           </div>`
         : `<div class="bew-hinweis">⏳ Kommentare werden gerade ausgewertet – die Bewertung erscheint in Kürze. <a href="${esc(kommentarLink)}" target="_blank" rel="noopener">Kommentare im Thread ansehen ↗</a></div>`}
@@ -1079,6 +1087,8 @@ const EXPORT_SPALTEN = [
   ["affiliate_kontakt", "Affiliate-Kontakt"], ["spieler_zahlen", "Spielerzahlen"],
   ["kunden_bewertungen", "Bewertungen"],
   ["bewertung_gesamt", "Community-Note (0-10)"], ["bewertung_kyc", "KYC-Note"], ["bewertung_auszahlung", "Auszahlungs-Note"],
+  ["kyc_zusammenfassung", "KYC-Fazit (Kommentare)"], ["auszahlung_zusammenfassung", "Auszahlungs-Fazit (Kommentare)"],
+  ["zahlungsmethoden_komm", "Zahlungsmittel (Kommentare)"],
   ["auszahlung_problem_ab", "Auszahlungsprobleme ab"], ["bewertung_kommentare", "Ausgewertete Kommentare"],
   ["views", "Aufrufe"], ["thread_url", "Bitcointalk-Link"],
 ];
