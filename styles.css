@@ -568,8 +568,84 @@ td .website { color: var(--accent); font-weight: 600; }
 
 .footer { text-align: center; color: var(--text-dim); font-size: 0.82rem; padding: 20px; border-top: 1px solid var(--border); }
 
-@media (max-width: 700px) {
+@media (max-width: 760px) {
   .d-grid { grid-template-columns: 1fr; }
-  .filter-row label { flex: 1 1 45%; }
-  .filter-row select { min-width: 0; width: 100%; }
+
+  /* Kopf & Buttons */
+  .topbar { padding: 16px 12px; }
+  .topbar h1 { font-size: 1.3rem; }
+  .subtitle { font-size: 0.85rem; }
+  .topbar-flex { flex-direction: column; align-items: stretch; gap: 10px; }
+  .user-chip { flex-wrap: wrap; justify-content: flex-start; }
+  .user-chip .btn-secondary { flex: 1 1 auto; font-size: 0.82rem; padding: 8px 10px; }
+  .container { padding: 14px 10px 50px; }
+
+  /* Stat-Karten: 2x2 */
+  .stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card { padding: 12px 12px; }
+  .stat-value { font-size: 1.4rem; }
+  .stat-label { font-size: 0.78rem; }
+
+  /* Filter: 2 pro Reihe, volle Breite */
+  .filter-row { gap: 8px; }
+  .filter-row label { flex: 1 1 44%; min-width: 0; font-size: 0.72rem; }
+  .filter-row select, .filter-row input[type="number"] { min-width: 0; width: 100%; }
+  .wunsch-row { flex-wrap: wrap; }
+  .wunsch-row input { flex: 1 1 100%; }
+
+  /* Export-Zeile */
+  .results-head { flex-direction: column; align-items: stretch; gap: 8px; }
+  .export-row { justify-content: flex-end; }
+
+  /* TABELLE → KARTEN */
+  #table thead { display: none; }
+  #table, #table tbody, #table tr, #table td { display: block; width: 100%; }
+  .table-wrap { border: none; background: transparent; overflow: visible; }
+  #table tr[data-id] {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    padding: 10px 12px 6px;
+    position: relative;
+  }
+  #table tr[data-id]:hover { background: var(--bg-card); }
+  #table td {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 6px 0; border: none; border-bottom: 1px solid var(--border);
+    text-align: right; font-size: 0.9rem;
+  }
+  #table td:last-child { border-bottom: none; }
+  #table td::before {
+    content: attr(data-label);
+    color: var(--text-dim); font-weight: 600; font-size: 0.8rem;
+    text-align: left; flex-shrink: 0;
+  }
+  /* Titel prominent oben, ohne Label; Merken-Buttons oben rechts */
+  #table td.title-cell {
+    display: block; text-align: left; border-bottom: 1px solid var(--border);
+    padding: 2px 70px 8px 0; margin-bottom: 4px;
+  }
+  #table td.title-cell::before { display: none; }
+  #table td.title-cell .t-title { white-space: normal; max-width: none; font-weight: 700; color: var(--accent); }
+  #table td.title-cell .t-kette { max-width: none; white-space: normal; }
+  #table td.nr-cell { position: absolute; top: 10px; right: 12px; padding: 0; border: none; width: auto; }
+  #table td.nr-cell::before { display: none; }
+  #table td.my-cell { position: absolute; top: 32px; right: 12px; padding: 0; border: none; width: auto; }
+  #table td.my-cell::before { display: none; }
+  #table td.bew-cell .bew-bar { width: 70px; }
+
+  /* Pagination */
+  .pagination { gap: 6px; }
+  .page-jump { margin-left: 0; flex-basis: 100%; justify-content: center; }
+  .pn-btn { padding: 6px 9px; min-width: 34px; }
+
+  /* Panels volle Breite (schon min(x,100vw), hier Feinschliff) */
+  .drawer-head h2 { font-size: 0.95rem; }
+  .bew-lbl { width: 90px; }
+}
+
+@media (max-width: 400px) {
+  .stats { grid-template-columns: 1fr 1fr; }
+  .user-chip .btn-secondary { font-size: 0.78rem; padding: 7px 8px; }
 }

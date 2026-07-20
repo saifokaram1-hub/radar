@@ -9,7 +9,7 @@
     // Bulletproof-Selbstheilung: prüft bei jedem Aufruf, ob eine neuere Version existiert.
     // Falls ja, per NEUER Adresse (?fresh=...) neu laden – das umgeht garantiert den
     // Browser-Cache der alten Seite (anders als ein normales Neuladen).
-    window.__APP_V = "20260707m";
+    window.__APP_V = "20260707n";
     (function () {
       try {
         fetch("version.txt?t=" + Date.now(), { cache: "no-store" })
@@ -24,7 +24,7 @@
       } catch (e) {}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260707m" />
+  <link rel="stylesheet" href="styles.css?v=20260707n" />
 </head>
 <body>
   <!-- Passwort-Tor -->
@@ -302,8 +302,8 @@
     <p>Datenquelle: <a href="https://bitcointalk.org/index.php?board=56.0" target="_blank" rel="noopener">bitcointalk.org · Gambling-Board</a> · Änderungen werden live in der Datenbank gespeichert.</p>
   </footer>
 
-  <script src="app.js?v=20260707m"></script>
-  <script src="personal.js?v=20260707m"></script>
-  <script src="chat.js?v=20260707m"></script>
+  <script src="app.js?v=20260707n"></script>
+  <script src="personal.js?v=20260707n"></script>
+  <script src="chat.js?v=20260707n"></script>
 </body>
 </html>

@@ -221,23 +221,23 @@ function renderRows(rows) {
   tbody.innerHTML = rows
     .map(
       (r) => `<tr data-id="${r.id}">
-        <td class="nr-cell">${r.nummer != null ? "#" + r.nummer : "–"}</td>
-        <td class="my-cell" onclick="event.stopPropagation()">${typeof window.myCellHtml === "function" ? window.myCellHtml(r.id) : ""}</td>
-        <td class="title-cell">
+        <td class="nr-cell" data-label="Nr">${r.nummer != null ? "#" + r.nummer : "–"}</td>
+        <td class="my-cell" data-label="Merken" onclick="event.stopPropagation()">${typeof window.myCellHtml === "function" ? window.myCellHtml(r.id) : ""}</td>
+        <td class="title-cell" data-label="Titel">
           <div class="t-title" title="${esc(r.title)}">${esc(r.title)}</div>
           ${r.kette_partner ? `<div class="t-kette">🔗 Verbunden mit: ${esc(r.kette_partner)}</div>` : ""}
         </td>
-        <td>${r.website ? `<span class="website">${esc(r.website)}</span>` : '<span style="color:var(--text-dim)">–</span>'}</td>
-        <td>${scoreBadge(r.bekanntheits_score)}</td>
-        <td>${kycBadge(r.kyc)}</td>
-        <td class="dach-cell"><span class="badge ${r.verfuegbar_de === "Ja" ? "yes" : "neutral"}" title="Verfügbar in Deutschland: ${esc(r.verfuegbar_de)}">DE</span> <span class="badge ${r.verfuegbar_at === "Ja" ? "yes" : "neutral"}" title="Verfügbar in Österreich: ${esc(r.verfuegbar_at)}">AT</span></td>
-        <td>${yesNoBadge(r.sportwetten)}</td>
-        <td>${yesNoBadge(r.affiliate)}</td>
-        <td>${r.revshare_wert != null ? `<span class="badge score-high">${r.revshare_wert}%</span>` : r.affiliate === "Ja" ? '<span class="badge neutral" title="Affiliate vorhanden, Satz verhandelbar">verh.</span>' : '<span style="color:var(--text-dim)">–</span>'}</td>
-        <td>${r.cpa_wert != null ? `<span class="badge score-high">$${r.cpa_wert}</span>` : r.cpa === "Ja" ? '<span class="badge yes">Ja</span>' : '<span style="color:var(--text-dim)">–</span>'}</td>
-        <td class="bew-cell">${bewBalken(r.bewertung_gesamt, r.bewertung_kommentare, false, r.bewertung_am != null)}</td>
-        <td>${r.views != null ? r.views.toLocaleString("de-AT") : "–"}</td>
-        <td><a class="thread-link" href="${esc(r.thread_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Öffnen ↗</a></td>
+        <td data-label="Website">${r.website ? `<span class="website">${esc(r.website)}</span>` : '<span style="color:var(--text-dim)">–</span>'}</td>
+        <td data-label="Bekanntheit">${scoreBadge(r.bekanntheits_score)}</td>
+        <td data-label="KYC">${kycBadge(r.kyc)}</td>
+        <td class="dach-cell" data-label="DE / AT"><span class="badge ${r.verfuegbar_de === "Ja" ? "yes" : "neutral"}" title="Verfügbar in Deutschland: ${esc(r.verfuegbar_de)}">DE</span> <span class="badge ${r.verfuegbar_at === "Ja" ? "yes" : "neutral"}" title="Verfügbar in Österreich: ${esc(r.verfuegbar_at)}">AT</span></td>
+        <td data-label="Sportwetten">${yesNoBadge(r.sportwetten)}</td>
+        <td data-label="Affiliate">${yesNoBadge(r.affiliate)}</td>
+        <td data-label="Revshare">${r.revshare_wert != null ? `<span class="badge score-high">${r.revshare_wert}%</span>` : r.affiliate === "Ja" ? '<span class="badge neutral" title="Affiliate vorhanden, Satz verhandelbar">verh.</span>' : '<span style="color:var(--text-dim)">–</span>'}</td>
+        <td data-label="CPA">${r.cpa_wert != null ? `<span class="badge score-high">$${r.cpa_wert}</span>` : r.cpa === "Ja" ? '<span class="badge yes">Ja</span>' : '<span style="color:var(--text-dim)">–</span>'}</td>
+        <td class="bew-cell" data-label="Bewertung">${bewBalken(r.bewertung_gesamt, r.bewertung_kommentare, false, r.bewertung_am != null)}</td>
+        <td data-label="Aufrufe">${r.views != null ? r.views.toLocaleString("de-AT") : "–"}</td>
+        <td data-label="Thread"><a class="thread-link" href="${esc(r.thread_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Öffnen ↗</a></td>
       </tr>`
     )
     .join("");
