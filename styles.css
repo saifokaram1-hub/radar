@@ -553,6 +553,38 @@ td .website { color: var(--accent); font-weight: 600; }
 .admin-entry .ae-note { color: var(--text-dim); font-style: italic; }
 .admin-empty { color: var(--text-dim); font-size: 0.85rem; }
 
+/* Popup-Menüs (Ordnerwahl, Download) */
+.menu-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 70; }
+.popup-menu {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  background: var(--bg-card); border: 1px solid var(--accent); border-radius: 12px;
+  z-index: 80; width: min(420px, 94vw); max-height: 82vh; display: flex; flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0,0,0,.6);
+}
+.popup-head { padding: 13px 16px; border-bottom: 1px solid var(--border); color: var(--accent); font-weight: 700; }
+.popup-list { overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 5px; }
+.popup-item {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; cursor: pointer; color: var(--text); font-size: 0.9rem; text-align: left;
+}
+.popup-item:hover { border-color: var(--accent); background: var(--bg-hover); }
+.popup-item.aktiv { border-color: var(--green); color: var(--green); }
+.popup-item small { color: var(--text-dim); }
+.popup-neu { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--border); }
+.popup-neu input { flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 9px 10px; outline: none; }
+.popup-neu input:focus { border-color: var(--accent); }
+.popup-close { margin: 8px 12px 12px; }
+.dl-optionen { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+.dl-opt { display: flex; gap: 9px; align-items: flex-start; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; cursor: pointer; font-size: 0.88rem; }
+.dl-opt:hover { border-color: var(--accent); }
+.dl-opt input { margin-top: 3px; accent-color: var(--accent); }
+.dl-opt small { color: var(--text-dim); }
+.dl-format { display: flex; gap: 8px; padding: 6px 14px 14px; flex-wrap: wrap; }
+.dl-format button { flex: 1 1 auto; }
+.ordner-dl { background: none; border: 1px solid var(--border); border-radius: 7px; color: var(--text-dim); cursor: pointer; font-size: 0.8rem; padding: 3px 8px; margin-left: 6px; }
+.ordner-dl:hover { color: var(--accent); border-color: var(--accent); }
+
 /* Toast */
 .toast {
   position: fixed;

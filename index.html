@@ -9,7 +9,7 @@
     // Bulletproof-Selbstheilung: prüft bei jedem Aufruf, ob eine neuere Version existiert.
     // Falls ja, per NEUER Adresse (?fresh=...) neu laden – das umgeht garantiert den
     // Browser-Cache der alten Seite (anders als ein normales Neuladen).
-    window.__APP_V = "20260707o";
+    window.__APP_V = "20260721a";
     (function () {
       try {
         fetch("version.txt?t=" + Date.now(), { cache: "no-store" })
@@ -24,7 +24,7 @@
       } catch (e) {}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260707o" />
+  <link rel="stylesheet" href="styles.css?v=20260721a" />
 </head>
 <body>
   <!-- Passwort-Tor -->
@@ -78,6 +78,34 @@
     <div class="cookie-inner">
       <span>🍪 Diese Plattform speichert deine Auswahl (Likes, gespeicherte Einträge, Notizen, Ordner) in deinem persönlichen Bereich. Mit „Akzeptieren“ stimmst du der Nutzung zu und schaltest deinen Zugang frei.</span>
       <button type="button" id="cookie-accept" class="btn-primary">Akzeptieren</button>
+    </div>
+  </div>
+
+  <!-- Ordner-Auswahl beim Speichern -->
+  <div class="menu-backdrop" id="ordnerwahl-backdrop" hidden></div>
+  <div class="popup-menu" id="ordnerwahl" hidden>
+    <div class="popup-head">🔖 Speichern in Ordner</div>
+    <div class="popup-list" id="ordnerwahl-liste"></div>
+    <div class="popup-neu">
+      <input type="text" id="ordnerwahl-neu" placeholder="Neuen Ordner anlegen …" maxlength="40" />
+      <button type="button" id="ordnerwahl-neu-btn" class="btn-primary">＋</button>
+    </div>
+    <button type="button" id="ordnerwahl-close" class="btn-secondary popup-close">Schließen</button>
+  </div>
+
+  <!-- Download-Dialog: Umfang wählen -->
+  <div class="menu-backdrop" id="dl-backdrop" hidden></div>
+  <div class="popup-menu dl-menu" id="dl-dialog" hidden>
+    <div class="popup-head" id="dl-titel">⬇ Herunterladen</div>
+    <div class="dl-optionen">
+      <label class="dl-opt"><input type="radio" name="dl-umfang" value="kompakt" checked /> <span><b>Kompakt</b><br><small>Nr, Name, Website, KYC, DE/AT, Bewertung – kleine Datei</small></span></label>
+      <label class="dl-opt"><input type="radio" name="dl-umfang" value="bewertung" /> <span><b>Mit Bewertungen &amp; Fazits</b><br><small>zusätzlich Noten, KYC-/Auszahlungs-/Anbieter-Fazit, Zahlungsmittel</small></span></label>
+      <label class="dl-opt"><input type="radio" name="dl-umfang" value="alles" /> <span><b>Alles</b><br><small>alle Felder inkl. Affiliate, CPA, Revshare, Lizenz, Notizen</small></span></label>
+    </div>
+    <div class="dl-format">
+      <button type="button" id="dl-excel" class="btn-primary">⬇ Als Excel</button>
+      <button type="button" id="dl-pdf" class="btn-secondary">⬇ Als PDF</button>
+      <button type="button" id="dl-close" class="btn-secondary">Abbrechen</button>
     </div>
   </div>
 
@@ -302,8 +330,8 @@
     <p>Datenquelle: <a href="https://bitcointalk.org/index.php?board=56.0" target="_blank" rel="noopener">bitcointalk.org · Gambling-Board</a> · Änderungen werden live in der Datenbank gespeichert.</p>
   </footer>
 
-  <script src="app.js?v=20260707o"></script>
-  <script src="personal.js?v=20260707o"></script>
-  <script src="chat.js?v=20260707o"></script>
+  <script src="app.js?v=20260721a"></script>
+  <script src="personal.js?v=20260721a"></script>
+  <script src="chat.js?v=20260721a"></script>
 </body>
 </html>

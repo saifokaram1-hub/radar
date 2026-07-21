@@ -128,7 +128,22 @@ function analysiere(posts, kycStatus, opText) {
     payZus += zahlungsmethoden ? `Zahlungsmittel: ${zahlungsmethoden}.` : '';
   }
 
-  return { gesamt, kycNote, payNote, problemAb, kycZus, payZus, zahlungsmethoden };
+  // Allgemeine Zusammenfassung (Anbieter insgesamt)
+  let allgZus;
+  const posSum = payP + kycP + genP, negSum = payN + kycN + genN;
+  if (posts.length === 0) {
+    allgZus = 'Keine Kommentare zum Auswerten vorhanden.';
+  } else {
+    allgZus = `${posts.length} Kommentare ausgewertet: ${posSum} positive und ${negSum} kritische Signale. `;
+    allgZus += gesamt != null
+      ? `Gesamtnote ${gesamt}/10 – ${gesamt >= 7 ? 'überwiegend positive' : gesamt >= 4 ? 'gemischte' : 'überwiegend kritische'} Erfahrungen. `
+      : 'Aus den Kommentaren lässt sich keine klare Tendenz ableiten. ';
+    allgZus += genN > genP ? 'Mehrere Nutzer warnen ausdrücklich vor dem Anbieter.'
+      : genP > genN ? 'Der Anbieter wird von Nutzern überwiegend empfohlen.'
+      : 'Zum Anbieter selbst gibt es keine klare Empfehlung oder Warnung.';
+  }
+
+  return { gesamt, kycNote, payNote, problemAb, kycZus, payZus, allgZus, zahlungsmethoden };
 }
 
 function findeDomainImOp(opText) {
@@ -177,8 +192,9 @@ if (require.main !== module) return;
   const offene = await holeOffene();
   console.log('Zu analysieren:', offene.length);
   let buffer = [], done = 0, fehler = 0, neueDomains = 0;
+  const neueDomainListe = [];
   const flush = async () => {
-    if (buffer.length) { if (await upsert(buffer)) buffer = []; else { fs.writeFileSync(path.join(STATE_DIR, 'full_failed.json'), JSON.stringify(buffer)); buffer = []; } }
+    if (buffer.length) { if (await upsert(buffer)) buffer = []; else { fs.appendFileSync(path.join(STATE_DIR, 'full_failed.jsonl'), buffer.map((x) => JSON.stringify(x)).join('\n') + '\n'); buffer = []; } }
     fs.writeFileSync(path.join(STATE_DIR, 'full_progress.txt'), `${done}/${offene.length}, Fehler ${fehler}, neue Domains ${neueDomains}, ${new Date().toISOString()}\n`);
   };
 
@@ -204,9 +220,12 @@ if (require.main !== module) return;
         topic_id: row.topic_id, nummer: row.nummer, title: row.title, thread_url: row.thread_url,
         bewertung_gesamt: a.gesamt, bewertung_kyc: a.kycNote, bewertung_auszahlung: a.payNote,
         auszahlung_problem_ab: a.problemAb, kyc_zusammenfassung: a.kycZus, auszahlung_zusammenfassung: a.payZus,
+        allgemein_zusammenfassung: a.allgZus,
         zahlungsmethoden_komm: a.zahlungsmethoden, bewertung_kommentare: posts.length, bewertung_am: new Date().toISOString(),
+        // Website IMMER mitschicken (einheitliche Keys für Bulk-Upsert); bestehende bleibt erhalten
+        website: neueWebsite || row.website || null,
       };
-      if (neueWebsite) rec.website = neueWebsite; // neue Domain -> Website-Check später
+      if (neueWebsite) neueDomainListe.push(row.topic_id);
       buffer.push(rec);
       done++;
     } else { fehler++; fs.appendFileSync(path.join(STATE_DIR, 'full_failed_topics.log'), row.topic_id + '\n'); }

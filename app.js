@@ -478,6 +478,7 @@ function openDrawer(record) {
               ? '<div class="bew-row"><span class="bew-lbl">KYC-Qualität</span><span class="bew-none">entfällt (Non-KYC)</span></div>'
               : `<div class="bew-row"><span class="bew-lbl">KYC-Qualität</span>${bewBalken(record.bewertung_kyc, null, true, true)}</div>`}
             <div class="bew-row"><span class="bew-lbl">Auszahlungen</span>${bewBalken(record.bewertung_auszahlung, null, true, true)}</div>
+            ${record.allgemein_zusammenfassung ? `<div class="bew-zus"><span class="bew-zus-t">📋 Anbieter-Fazit</span>${esc(record.allgemein_zusammenfassung)}</div>` : ""}
             ${record.kyc_zusammenfassung ? `<div class="bew-zus"><span class="bew-zus-t">🔐 KYC-Fazit</span>${esc(record.kyc_zusammenfassung)}</div>` : ""}
             ${record.auszahlung_zusammenfassung ? `<div class="bew-zus"><span class="bew-zus-t">💸 Auszahlungs-Fazit</span>${esc(record.auszahlung_zusammenfassung)}</div>` : `<div class="bew-hinweis">💸 ${esc(record.auszahlung_problem_ab || "–")}</div>`}
             ${record.zahlungsmethoden_komm ? `<div class="bew-hinweis">💳 In Kommentaren genannte Zahlungsmittel: <b>${esc(record.zahlungsmethoden_komm)}</b></div>` : ""}
@@ -1087,6 +1088,7 @@ const EXPORT_SPALTEN = [
   ["affiliate_kontakt", "Affiliate-Kontakt"], ["spieler_zahlen", "Spielerzahlen"],
   ["kunden_bewertungen", "Bewertungen"],
   ["bewertung_gesamt", "Community-Note (0-10)"], ["bewertung_kyc", "KYC-Note"], ["bewertung_auszahlung", "Auszahlungs-Note"],
+  ["allgemein_zusammenfassung", "Anbieter-Fazit (Kommentare)"],
   ["kyc_zusammenfassung", "KYC-Fazit (Kommentare)"], ["auszahlung_zusammenfassung", "Auszahlungs-Fazit (Kommentare)"],
   ["zahlungsmethoden_komm", "Zahlungsmittel (Kommentare)"],
   ["auszahlung_problem_ab", "Auszahlungsprobleme ab"], ["bewertung_kommentare", "Ausgewertete Kommentare"],

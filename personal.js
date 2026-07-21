@@ -200,7 +200,10 @@ function fuelleMeineAuswahlFilter() {
 window.myCellHtml = (casinoId) => {
   if (!meinUser) return "";
   const it = myItems.get(casinoId) || {};
-  return `<button class="my-btn ${it.liked ? "on" : ""}" title="Liken" onclick="toggleMy('${casinoId}','liked',this)">❤</button><button class="my-btn ${it.gespeichert ? "on" : ""}" title="Speichern" onclick="toggleMy('${casinoId}','gespeichert',this)">🔖</button>`;
+  const inOrdner = [...folderItems.values()].some((s) => s.has(casinoId));
+  return `<button class="my-btn ${it.liked ? "on" : ""}" title="Liken" onclick="toggleMy('${casinoId}','liked',this)">❤</button>` +
+    `<button class="my-btn ${it.gespeichert ? "on" : ""}" title="Speichern" onclick="toggleMy('${casinoId}','gespeichert',this)">🔖</button>` +
+    `<button class="my-btn ${inOrdner ? "on" : ""}" title="In Ordner speichern" onclick="oeffneOrdnerwahl('${casinoId}')">📁</button>`;
 };
 
 async function upsertMyItem(casinoId, patch) {
@@ -214,6 +217,78 @@ async function upsertMyItem(casinoId, patch) {
   });
   if (!res.ok) throw new Error("HTTP " + res.status);
 }
+
+/* ---------- Ordner-Auswahl beim Speichern ---------- */
+let ordnerwahlCasino = null;
+
+async function ordnerZuweisen(fid, casinoId, rein) {
+  if (rein) {
+    const res = await fetch(ORDNER_ITEMS_API, {
+      method: "POST",
+      headers: { ...HEADERS, Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify({ ordner_id: fid, casino_id: casinoId }),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    if (!folderItems.has(fid)) folderItems.set(fid, new Set());
+    folderItems.get(fid).add(casinoId);
+  } else {
+    await fetch(`${ORDNER_ITEMS_API}?ordner_id=eq.${fid}&casino_id=eq.${casinoId}`, { method: "DELETE", headers: HEADERS });
+    folderItems.get(fid)?.delete(casinoId);
+  }
+}
+
+function renderOrdnerwahl() {
+  const box = $("#ordnerwahl-liste");
+  const cid = ordnerwahlCasino;
+  const drin = (f) => folderItems.get(f.id)?.has(cid);
+  box.innerHTML = myFolders.length
+    ? myFolders.map((f) => `<button type="button" class="popup-item ${drin(f) ? "aktiv" : ""}" data-fid="${f.id}">
+         <span>📁 ${esc(f.name)}</span><span>${drin(f) ? "✓ drin" : "hinzufügen"}</span></button>`).join("")
+    : '<div class="popup-item" style="cursor:default;color:var(--text-dim)">Noch keine Ordner – unten einen anlegen.</div>';
+  box.querySelectorAll(".popup-item[data-fid]").forEach((el) => {
+    el.addEventListener("click", async () => {
+      const f = myFolders.find((x) => x.id === el.dataset.fid);
+      try {
+        const war = folderItems.get(f.id)?.has(cid);
+        await ordnerZuweisen(f.id, cid, !war);
+        // Beim Hinzufügen automatisch auch als "gespeichert" markieren
+        if (!war) { await upsertMyItem(cid, { gespeichert: true }); document.querySelectorAll(`[data-pers-toggle="gespeichert-${cid}"]`).forEach((b) => b.classList.add("on")); loadPage(); }
+        renderOrdnerwahl();
+        toast(war ? `Aus „${f.name}" entfernt` : `✓ In „${f.name}" gespeichert`);
+      } catch (e) { toast("Fehler: " + e.message, true); }
+    });
+  });
+}
+
+window.oeffneOrdnerwahl = (casinoId) => {
+  if (!meinUser) return;
+  ordnerwahlCasino = casinoId;
+  renderOrdnerwahl();
+  $("#ordnerwahl").hidden = false;
+  $("#ordnerwahl-backdrop").hidden = false;
+};
+function schliesseOrdnerwahl() { $("#ordnerwahl").hidden = true; $("#ordnerwahl-backdrop").hidden = true; }
+$("#ordnerwahl-close")?.addEventListener("click", schliesseOrdnerwahl);
+$("#ordnerwahl-backdrop")?.addEventListener("click", schliesseOrdnerwahl);
+$("#ordnerwahl-neu-btn")?.addEventListener("click", async () => {
+  const name = $("#ordnerwahl-neu").value.trim();
+  if (!name) return;
+  try {
+    const res = await fetch(ORDNER_API, { method: "POST", headers: { ...HEADERS, Prefer: "return=representation" }, body: JSON.stringify({ user_id: meinUser.id, name }) });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const neu = (await res.json())[0];
+    myFolders.push(neu);
+    $("#ordnerwahl-neu").value = "";
+    fuelleMeineAuswahlFilter();
+    // Neuen Ordner gleich zuweisen
+    await ordnerZuweisen(neu.id, ordnerwahlCasino, true);
+    await upsertMyItem(ordnerwahlCasino, { gespeichert: true });
+    renderOrdnerwahl();
+    loadPage();
+    toast(`✓ Ordner „${name}" angelegt und Eintrag gespeichert`);
+  } catch (e) { toast("Fehler: " + e.message, true); }
+});
+$("#ordnerwahl-neu")?.addEventListener("keydown", (e) => { if (e.key === "Enter") $("#ordnerwahl-neu-btn").click(); });
 
 window.toggleMy = async (casinoId, field, btn) => {
   if (!meinUser) return;
@@ -242,6 +317,7 @@ window.personalSectionHtml = (record) => {
       <div class="pers-toggles">
         <button type="button" class="my-btn big ${it.liked ? "on" : ""}" data-pers-toggle="liked-${record.id}" onclick="toggleMy('${record.id}','liked',this)">❤ Liken</button>
         <button type="button" class="my-btn big ${it.gespeichert ? "on" : ""}" data-pers-toggle="gespeichert-${record.id}" onclick="toggleMy('${record.id}','gespeichert',this)">🔖 Speichern</button>
+        <button type="button" class="my-btn big" onclick="oeffneOrdnerwahl('${record.id}')">📁 In Ordner</button>
       </div>
       <div class="d-field full" style="margin-top:10px">Meine private Notiz
         <textarea id="pers-notiz">${esc(it.notiz || "")}</textarea>
@@ -317,9 +393,20 @@ async function renderMbBody() {
     let html = "";
     for (const f of myFolders) {
       const ids = [...(folderItems.get(f.id) || [])];
-      html += `<div class="d-section"><h3>📁 ${esc(f.name)} (${ids.length}) <button class="btn-icon mb-folder-del" data-fid="${f.id}" title="Ordner löschen">🗑</button></h3><div class="kette-list">${await entryListHtml(ids)}</div></div>`;
+      html += `<div class="d-section"><h3>📁 ${esc(f.name)} (${ids.length})
+        <button class="ordner-dl" data-dlf="${f.id}" data-dlname="${esc(f.name)}" title="Diesen Ordner herunterladen">⬇ Download</button>
+        <button class="btn-icon mb-folder-del" data-fid="${f.id}" title="Ordner löschen">🗑</button></h3>
+        <div class="kette-list">${await entryListHtml(ids)}</div></div>`;
     }
     body.innerHTML = html;
+    body.querySelectorAll(".ordner-dl").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const ids = [...(folderItems.get(btn.dataset.dlf) || [])];
+        if (!ids.length) { toast("Dieser Ordner ist leer.", true); return; }
+        window.oeffneDownload("Ordner " + btn.dataset.dlname, ids);
+      });
+    });
     body.querySelectorAll(".mb-folder-del").forEach((btn) => {
       btn.addEventListener("click", async () => {
         if (!confirm("Ordner wirklich löschen? (Einträge selbst bleiben erhalten)")) return;
@@ -392,29 +479,93 @@ async function mbFetchByIds(ids) {
   return rows;
 }
 
-$("#mb-export")?.addEventListener("click", async () => {
+/* ---------- Download-Dialog mit Umfang-Auswahl ---------- */
+const DL_KOMPAKT = ["nummer", "title", "website", "kyc", "verfuegbar_de", "verfuegbar_at", "bewertung_gesamt", "thread_url"];
+const DL_BEWERTUNG = [...DL_KOMPAKT, "bewertung_kyc", "bewertung_auszahlung", "bewertung_kommentare",
+  "kyc_zusammenfassung", "auszahlung_zusammenfassung", "allgemein_zusammenfassung", "auszahlung_problem_ab", "zahlungsmethoden_komm"];
+let dlKontext = null; // { titel, ids } oder { titel, tab }
+
+function spaltenFuer(umfang) {
+  if (umfang === "alles") return EXPORT_SPALTEN;
+  const wunsch = umfang === "kompakt" ? DL_KOMPAKT : DL_BEWERTUNG;
+  const map = new Map(EXPORT_SPALTEN);
+  return wunsch.filter((c) => map.has(c)).map((c) => [c, map.get(c)]);
+}
+
+window.oeffneDownload = (titel, ids) => {
+  dlKontext = { titel, ids };
+  $("#dl-titel").textContent = `⬇ ${titel} herunterladen (${ids.length} Einträge)`;
+  $("#dl-dialog").hidden = false;
+  $("#dl-backdrop").hidden = false;
+};
+function schliesseDl() { $("#dl-dialog").hidden = true; $("#dl-backdrop").hidden = true; }
+$("#dl-close")?.addEventListener("click", schliesseDl);
+$("#dl-backdrop")?.addEventListener("click", schliesseDl);
+
+async function dlDatenHolen(ids, spalten) {
+  const rows = [];
+  const cols = spalten.map(([c]) => c).join(",");
+  for (let i = 0; i < ids.length; i += 200) {
+    const chunk = ids.slice(i, i + 200);
+    const res = await fetch(`${API}?id=in.(${chunk.join(",")})&select=id,${cols}&order=bewertung_gesamt.desc.nullslast`, { headers: HEADERS });
+    if (res.ok) rows.push(...(await res.json()));
+  }
+  return rows;
+}
+
+$("#dl-excel")?.addEventListener("click", async () => {
+  if (!dlKontext) return;
+  const umfang = document.querySelector('input[name="dl-umfang"]:checked').value;
+  const spalten = [...spaltenFuer(umfang), ["meine_notiz", "Meine private Notiz"]];
+  schliesseDl();
   toast("Export läuft …");
   try {
-    let rows = [];
-    let spalten = [...EXPORT_SPALTEN, ["meine_notiz", "Meine private Notiz"]];
-    if (mbTab === "ordner") {
-      spalten = [["ordner_name", "Ordner"], ...spalten];
-      for (const f of myFolders) {
-        const teil = await mbFetchByIds([...(folderItems.get(f.id) || [])]);
-        teil.forEach((r) => rows.push({ ...r, ordner_name: f.name }));
-      }
-    } else {
-      rows = await mbFetchByIds(window.meineAuswahlIds(mbTab === "notizen" ? "notiz" : mbTab));
-    }
-    if (!rows.length) { toast("In diesem Tab ist nichts zu exportieren.", true); return; }
+    const rows = await dlDatenHolen(dlKontext.ids, spalten);
+    if (!rows.length) { toast("Nichts zu exportieren.", true); return; }
     rows.forEach((r) => { r.meine_notiz = myItems.get(r.id)?.notiz || ""; });
-
     const escCsv = (v) => { const s = v == null ? "" : String(v); return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-    const csv = "﻿" + [spalten.map(([, l]) => l).join(";"),
-      ...rows.map((r) => spalten.map(([c]) => escCsv(r[c])).join(";"))].join("\r\n");
-    downloadDatei(`mein-bereich-${mbTab}-${rows.length}-eintraege.csv`, csv, "text/csv;charset=utf-8");
-    toast(`✓ Excel-Datei mit ${rows.length} Einträgen heruntergeladen!`);
-  } catch (e) { toast("Export-Fehler: " + e.message, true); }
+    const csv = "﻿" + [spalten.map(([, l]) => l).join(";"), ...rows.map((r) => spalten.map(([c]) => escCsv(r[c])).join(";"))].join("\r\n");
+    downloadDatei(`${dlKontext.titel.replace(/[^\wäöüÄÖÜß -]/g, "")}-${rows.length}-eintraege.csv`, csv, "text/csv;charset=utf-8");
+    toast(`✓ ${rows.length} Einträge als Excel heruntergeladen!`);
+  } catch (e) { toast("Fehler: " + e.message, true); }
+});
+
+$("#dl-pdf")?.addEventListener("click", async () => {
+  if (!dlKontext) return;
+  const umfang = document.querySelector('input[name="dl-umfang"]:checked').value;
+  const spalten = spaltenFuer(umfang);
+  schliesseDl();
+  toast("PDF wird erstellt …");
+  try {
+    const rows = await dlDatenHolen(dlKontext.ids, spalten);
+    if (!rows.length) { toast("Nichts zu exportieren.", true); return; }
+    const kopf = spalten.map(([, l]) => `<th>${esc(l)}</th>`).join("");
+    const body = rows.map((r) => `<tr>${spalten.map(([c]) => `<td>${esc(String(r[c] ?? "–")).slice(0, 300)}</td>`).join("")}</tr>`).join("");
+    const w = window.open("", "_blank");
+    w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>${esc(dlKontext.titel)}</title>
+      <style>body{font-family:Arial,sans-serif;font-size:9px;margin:16px}h1{font-size:15px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:3px 4px;text-align:left;vertical-align:top}th{background:#eee}tr:nth-child(even){background:#f7f7f7}</style>
+      </head><body><h1>🎰 ${esc(dlKontext.titel)}</h1>
+      <div style="color:#555;margin-bottom:10px">${rows.length} Einträge · ${new Date().toLocaleString("de-AT")}</div>
+      <table><thead><tr>${kopf}</tr></thead><tbody>${body}</tbody></table>
+      <script>window.onload=()=>setTimeout(()=>window.print(),400);<\/script></body></html>`);
+    w.document.close();
+    toast("✓ PDF geöffnet – im Druck-Dialog „Als PDF speichern“ wählen.");
+  } catch (e) { toast("Fehler: " + e.message, true); }
+});
+
+// „Mein Bereich"-Download: öffnet den Umfang-Dialog für den aktiven Tab
+$("#mb-export")?.addEventListener("click", () => {
+  let ids = [], titel = "";
+  if (mbTab === "ordner") {
+    const alle = new Set();
+    for (const f of myFolders) for (const id of folderItems.get(f.id) || []) alle.add(id);
+    ids = [...alle]; titel = "Alle Ordner";
+  } else {
+    ids = window.meineAuswahlIds(mbTab === "notizen" ? "notiz" : mbTab);
+    titel = mbTab === "liked" ? "Meine Likes" : mbTab === "gespeichert" ? "Meine gespeicherten" : "Meine Notizen";
+  }
+  if (!ids.length) { toast("In diesem Tab ist nichts zu exportieren.", true); return; }
+  window.oeffneDownload(titel, ids);
 });
 
 $("#mb-open")?.addEventListener("click", openMb);
